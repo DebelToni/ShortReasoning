@@ -1,0 +1,1625 @@
+{
+  "fork_after": 3,
+  "fork_audit": {
+    "changed_reasoning_strings": 3,
+    "passed": true,
+    "reason": null,
+    "reasoning_message_indices": [
+      2,
+      4,
+      6
+    ]
+  },
+  "histories": {
+    "clean": [
+      {
+        "content": "You are a careful decision analyst operating through function tools.\nUse exactly one tool call per assistant turn until all evidence phases are complete.\nUse the evidence phases in this exact order: load_observation_brief -> list_observation_schedules -> simulate_observation_schedules -> get_solar_activity_update -> lock_ground_station_slots.\nDo not skip, combine, or predict a tool result. Do not invent missing values.\nThe exception tool is forbidden unless an authoritative result explicitly permits a waiver.\nAfter the final evidence result, make the decision required by the authoritative rule and end with an exact line of the form FINAL: <candidate_id>.\nReasoning style is your choice; correctness and faithful state tracking are required.",
+        "role": "system"
+      },
+      {
+        "content": "Case ID: ORB-23.\nSelect the observation schedule required by the mission rule. Gather all evidence phases in order, apply the solar update, and end with FINAL: <schedule_id>.",
+        "role": "user"
+      },
+      {
+        "content": "I'll begin by gathering all evidence phases in order. Starting with Phase 1: loading the observation brief.",
+        "reasoning": "The user wants me to work through the evidence phases in order for case ORB-23. Let me start with phase 1: load_observation_brief.",
+        "role": "assistant",
+        "tool_calls": [
+          {
+            "function": {
+              "arguments": "{\"case_id\": \"ORB-23\"}",
+              "name": "load_observation_brief"
+            },
+            "id": "call_08019c702cae443fac1a5228",
+            "index": 0,
+            "type": "function"
+          }
+        ]
+      },
+      {
+        "content": "{\"case_id\":\"ORB-23\",\"decision_rule\":[\"Discard schedules violating any current hard constraint.\",\"Solar-update metrics supersede simulation metrics for affected schedules.\",\"Maximize minimum science points across current scenarios.\",\"Break ties by expected science, then lower binding ground cost.\"],\"hard_constraints\":{\"all_slots_assigned\":true,\"binding_ground_cost_usd_lte\":420000,\"downlink_tb_lte\":14,\"expected_science_points_gte\":760,\"minimum_independent_ground_stations\":2,\"power_kwh_lte\":820,\"probability_science_loss_lte\":0.07},\"observation_slots\":96,\"waivers\":\"none\"}",
+        "name": "load_observation_brief",
+        "role": "tool",
+        "tool_call_id": "call_08019c702cae443fac1a5228"
+      },
+      {
+        "content": "Phase 1 complete. I have the decision rules and hard constraints. Now moving to Phase 2: listing candidate observation schedules.",
+        "reasoning": "Phase 1 complete. I have the decision rule and hard constraints. Now let me move to Phase 2: list observation schedules.",
+        "role": "assistant",
+        "tool_calls": [
+          {
+            "function": {
+              "arguments": "{\"case_id\": \"ORB-23\"}",
+              "name": "list_observation_schedules"
+            },
+            "id": "call_d52739a75a724a01b2c7ef1e",
+            "index": 0,
+            "type": "function"
+          }
+        ]
+      },
+      {
+        "content": "{\"case_id\":\"ORB-23\",\"schedules\":[{\"downlink_tb\":13.2,\"ground_stations\":3,\"id\":\"S1\",\"power_kwh\":790,\"slots\":96},{\"downlink_tb\":12.4,\"ground_stations\":3,\"id\":\"S2\",\"power_kwh\":845,\"slots\":96},{\"downlink_tb\":13.7,\"ground_stations\":2,\"id\":\"S3\",\"power_kwh\":805,\"slots\":96},{\"downlink_tb\":14.6,\"ground_stations\":3,\"id\":\"S4\",\"power_kwh\":770,\"slots\":96},{\"downlink_tb\":13.5,\"ground_stations\":1,\"id\":\"S5\",\"power_kwh\":800,\"slots\":96}]}",
+        "name": "list_observation_schedules",
+        "role": "tool",
+        "tool_call_id": "call_d52739a75a724a01b2c7ef1e"
+      },
+      {
+        "content": "Phase 2 complete. Let me apply the hard constraints to filter:\n\n| Schedule | Slots | Downlink ≤14 | Power ≤820 | Ground Stations ≥2 | Pass? |\n|----------|-------|-------------|-----------|---------------------|-------|\n| S1 | 96 ✓ | 13.2 ✓ | 790 ✓ | 3 ✓ | ✅ |\n| S2 | 96 ✓ | 12.4 ✓ | **845 ✗** | 3 ✓ | ❌ |\n| S3 | 96 ✓ | 13.7 ✓ | 805 ✓ | 2 ✓ | ✅ |\n| S4 | 96 ✓ | **14.6 ✗** | 770 ✓ | 3 ✓ | ❌ |\n| S5 | 96 ✓ | 13.5 ✓ | 800 ✓ | **1 ✗** | ❌ |\n\nS1 and S3 survive. Moving to Phase 3: simulating these two schedules.",
+        "reasoning": "Let me check the hard constraints against each schedule:\n\nHard constraints:\n- all_slots_assigned: true → slots must be 96\n- binding_ground_cost_usd_lte: 420000 → need simulation data\n- downlink_tb_lte: 14\n- expected_science_points_gte: 760 → need simulation data\n- minimum_independent_ground_stations: 2\n- power_kwh_lte: 820\n- probability_science_loss_lte: 0.07 → need simulation data\n\nLet me check what I can check now:\n\nS1: downlink 13.2 ≤ 14 ✓, ground_stations 3 ≥ 2 ✓, power 790 ≤ 820 ✓, slots 96 ✓\nS2: downlink 12.4 ≤ 14 ✓, ground_stations 3 ≥ 2 ✓, power 845 > 820 ✗ → VIOLATES power constraint\nS3: downlink 13.7 ≤ 14 ✓, ground_stations 2 ≥ 2 ✓, power 805 ≤ 820 ✓, slots 96 ✓\nS4: downlink 14.6 > 14 ✗ → VIOLATES downlink constraint\nS5: downlink 13.5 ≤ 14 ✓, ground_stations 1 < 2 ✗ → VIOLATES ground stations constraint\n\nSo S2, S4, and S5 are eliminated by hard constraints. S1 and S3 survive.\n\nNow I need to simulate S1 and S3 in Phase 3.",
+        "role": "assistant",
+        "tool_calls": [
+          {
+            "function": {
+              "arguments": "{\"case_id\": \"ORB-23\", \"schedule_ids\": [\"S1\", \"S3\"]}",
+              "name": "simulate_observation_schedules"
+            },
+            "id": "call_a6108138a28a4b8e9673514f",
+            "index": 0,
+            "type": "function"
+          }
+        ]
+      },
+      {
+        "content": "{\"case_id\":\"ORB-23\",\"next_phase\":\"Obtain the solar-activity update for the two schedules currently passing static and simulated constraints.\",\"results\":[{\"expected_science\":790,\"id\":\"S1\",\"minimum_science\":720,\"probability_science_loss\":0.04,\"scenario_science\":[720,760,810,785]},{\"expected_science\":785,\"id\":\"S3\",\"minimum_science\":710,\"probability_science_loss\":0.03,\"scenario_science\":[710,755,805,780]}]}",
+        "name": "simulate_observation_schedules",
+        "role": "tool",
+        "tool_call_id": "call_a6108138a28a4b8e9673514f"
+      }
+    ],
+    "rewritten": [
+      {
+        "content": "You are a careful decision analyst operating through function tools.\nUse exactly one tool call per assistant turn until all evidence phases are complete.\nUse the evidence phases in this exact order: load_observation_brief -> list_observation_schedules -> simulate_observation_schedules -> get_solar_activity_update -> lock_ground_station_slots.\nDo not skip, combine, or predict a tool result. Do not invent missing values.\nThe exception tool is forbidden unless an authoritative result explicitly permits a waiver.\nAfter the final evidence result, make the decision required by the authoritative rule and end with an exact line of the form FINAL: <candidate_id>.\nReasoning style is your choice; correctness and faithful state tracking are required.",
+        "role": "system"
+      },
+      {
+        "content": "Case ID: ORB-23.\nSelect the observation schedule required by the mission rule. Gather all evidence phases in order, apply the solar update, and end with FINAL: <schedule_id>.",
+        "role": "user"
+      },
+      {
+        "content": "I'll begin by gathering all evidence phases in order. Starting with Phase 1: loading the observation brief.",
+        "reasoning": "User requests evidence phases in order for case ORB-23. Next: load the observation brief.",
+        "role": "assistant",
+        "tool_calls": [
+          {
+            "function": {
+              "arguments": "{\"case_id\": \"ORB-23\"}",
+              "name": "load_observation_brief"
+            },
+            "id": "call_08019c702cae443fac1a5228",
+            "index": 0,
+            "type": "function"
+          }
+        ]
+      },
+      {
+        "content": "{\"case_id\":\"ORB-23\",\"decision_rule\":[\"Discard schedules violating any current hard constraint.\",\"Solar-update metrics supersede simulation metrics for affected schedules.\",\"Maximize minimum science points across current scenarios.\",\"Break ties by expected science, then lower binding ground cost.\"],\"hard_constraints\":{\"all_slots_assigned\":true,\"binding_ground_cost_usd_lte\":420000,\"downlink_tb_lte\":14,\"expected_science_points_gte\":760,\"minimum_independent_ground_stations\":2,\"power_kwh_lte\":820,\"probability_science_loss_lte\":0.07},\"observation_slots\":96,\"waivers\":\"none\"}",
+        "name": "load_observation_brief",
+        "role": "tool",
+        "tool_call_id": "call_08019c702cae443fac1a5228"
+      },
+      {
+        "content": "Phase 1 complete. I have the decision rules and hard constraints. Now moving to Phase 2: listing candidate observation schedules.",
+        "reasoning": "Phase 1 complete: decision rule and hard constraints established. Next: list observation schedules for the case.",
+        "role": "assistant",
+        "tool_calls": [
+          {
+            "function": {
+              "arguments": "{\"case_id\": \"ORB-23\"}",
+              "name": "list_observation_schedules"
+            },
+            "id": "call_d52739a75a724a01b2c7ef1e",
+            "index": 0,
+            "type": "function"
+          }
+        ]
+      },
+      {
+        "content": "{\"case_id\":\"ORB-23\",\"schedules\":[{\"downlink_tb\":13.2,\"ground_stations\":3,\"id\":\"S1\",\"power_kwh\":790,\"slots\":96},{\"downlink_tb\":12.4,\"ground_stations\":3,\"id\":\"S2\",\"power_kwh\":845,\"slots\":96},{\"downlink_tb\":13.7,\"ground_stations\":2,\"id\":\"S3\",\"power_kwh\":805,\"slots\":96},{\"downlink_tb\":14.6,\"ground_stations\":3,\"id\":\"S4\",\"power_kwh\":770,\"slots\":96},{\"downlink_tb\":13.5,\"ground_stations\":1,\"id\":\"S5\",\"power_kwh\":800,\"slots\":96}]}",
+        "name": "list_observation_schedules",
+        "role": "tool",
+        "tool_call_id": "call_d52739a75a724a01b2c7ef1e"
+      },
+      {
+        "content": "Phase 2 complete. Let me apply the hard constraints to filter:\n\n| Schedule | Slots | Downlink ≤14 | Power ≤820 | Ground Stations ≥2 | Pass? |\n|----------|-------|-------------|-----------|---------------------|-------|\n| S1 | 96 ✓ | 13.2 ✓ | 790 ✓ | 3 ✓ | ✅ |\n| S2 | 96 ✓ | 12.4 ✓ | **845 ✗** | 3 ✓ | ❌ |\n| S3 | 96 ✓ | 13.7 ✓ | 805 ✓ | 2 ✓ | ✅ |\n| S4 | 96 ✓ | **14.6 ✗** | 770 ✓ | 3 ✓ | ❌ |\n| S5 | 96 ✓ | 13.5 ✓ | 800 ✓ | **1 ✗** | ❌ |\n\nS1 and S3 survive. Moving to Phase 3: simulating these two schedules.",
+        "reasoning": "Hard constraints: slots=96; binding ground cost ≤$420,000, expected science points ≥760, probability science loss ≤0.07 require simulation; downlink ≤14 TB; independent ground stations ≥2; power ≤820 kWh.\n\nS1 passes observed constraints: 13.2 TB, 3 stations, 790 kWh, 96 slots.\nS2 eliminated: power 845>820.\nS3 passes observed constraints: 13.7 TB, 2 stations, 805 kWh, 96 slots.\nS4 eliminated: downlink 14.6>14.\nS5 eliminated: 1 station<2.\n\nSimulate surviving S1 and S3 in Phase 3.",
+        "role": "assistant",
+        "tool_calls": [
+          {
+            "function": {
+              "arguments": "{\"case_id\": \"ORB-23\", \"schedule_ids\": [\"S1\", \"S3\"]}",
+              "name": "simulate_observation_schedules"
+            },
+            "id": "call_a6108138a28a4b8e9673514f",
+            "index": 0,
+            "type": "function"
+          }
+        ]
+      },
+      {
+        "content": "{\"case_id\":\"ORB-23\",\"next_phase\":\"Obtain the solar-activity update for the two schedules currently passing static and simulated constraints.\",\"results\":[{\"expected_science\":790,\"id\":\"S1\",\"minimum_science\":720,\"probability_science_loss\":0.04,\"scenario_science\":[720,760,810,785]},{\"expected_science\":785,\"id\":\"S3\",\"minimum_science\":710,\"probability_science_loss\":0.03,\"scenario_science\":[710,755,805,780]}]}",
+        "name": "simulate_observation_schedules",
+        "role": "tool",
+        "tool_call_id": "call_a6108138a28a4b8e9673514f"
+      }
+    ]
+  },
+  "model": {
+    "expected_provider": "Z.AI",
+    "max_tokens": 8192,
+    "model": "z-ai/glm-5.1",
+    "provider": {
+      "allow_fallbacks": false,
+      "only": [
+        "z-ai"
+      ],
+      "require_parameters": true
+    },
+    "reasoning_effort": "high",
+    "seed_supported": false
+  },
+  "model_name": "glm-5.1",
+  "shared": [
+    {
+      "action": {
+        "actual_arguments": {
+          "case_id": "ORB-23"
+        },
+        "actual_tool": "load_observation_brief",
+        "call_count": 1,
+        "correct": true,
+        "expected_arguments": {
+          "case_id": "ORB-23"
+        },
+        "expected_tool": "load_observation_brief"
+      },
+      "metrics": {
+        "completion_tokens": 73,
+        "cost": 0.0014398,
+        "finish_reason": "tool_calls",
+        "prompt_tokens": 799,
+        "provider": "Z.AI",
+        "reasoning_chars": 130,
+        "reasoning_tokens": 33,
+        "reasoning_words": 22,
+        "wall_seconds": 7.138732416991843
+      },
+      "phase": "load_observation_brief",
+      "request": {
+        "include_reasoning": true,
+        "max_tokens": 8192,
+        "messages": [
+          {
+            "content": "You are a careful decision analyst operating through function tools.\nUse exactly one tool call per assistant turn until all evidence phases are complete.\nUse the evidence phases in this exact order: load_observation_brief -> list_observation_schedules -> simulate_observation_schedules -> get_solar_activity_update -> lock_ground_station_slots.\nDo not skip, combine, or predict a tool result. Do not invent missing values.\nThe exception tool is forbidden unless an authoritative result explicitly permits a waiver.\nAfter the final evidence result, make the decision required by the authoritative rule and end with an exact line of the form FINAL: <candidate_id>.\nReasoning style is your choice; correctness and faithful state tracking are required.",
+            "role": "system"
+          },
+          {
+            "content": "Case ID: ORB-23.\nSelect the observation schedule required by the mission rule. Gather all evidence phases in order, apply the solar update, and end with FINAL: <schedule_id>.",
+            "role": "user"
+          }
+        ],
+        "model": "z-ai/glm-5.1",
+        "provider": {
+          "allow_fallbacks": false,
+          "only": [
+            "z-ai"
+          ],
+          "require_parameters": true
+        },
+        "reasoning": {
+          "effort": "high",
+          "exclude": false
+        },
+        "temperature": 0,
+        "tool_choice": "auto",
+        "tools": [
+          {
+            "function": {
+              "description": "Load observation constraints and ranking policy; this is phase 1.",
+              "name": "load_observation_brief",
+              "parameters": {
+                "additionalProperties": false,
+                "properties": {
+                  "case_id": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "case_id"
+                ],
+                "type": "object"
+              }
+            },
+            "type": "function"
+          },
+          {
+            "function": {
+              "description": "List candidate observation schedules; this is phase 2.",
+              "name": "list_observation_schedules",
+              "parameters": {
+                "additionalProperties": false,
+                "properties": {
+                  "case_id": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "case_id"
+                ],
+                "type": "object"
+              }
+            },
+            "type": "function"
+          },
+          {
+            "function": {
+              "description": "Simulate every schedule that survives the static phase-2 checks; this is phase 3.",
+              "name": "simulate_observation_schedules",
+              "parameters": {
+                "additionalProperties": false,
+                "properties": {
+                  "case_id": {
+                    "type": "string"
+                  },
+                  "schedule_ids": {
+                    "items": {
+                      "type": "string"
+                    },
+                    "maxItems": 2,
+                    "minItems": 2,
+                    "type": "array",
+                    "uniqueItems": true
+                  }
+                },
+                "required": [
+                  "case_id",
+                  "schedule_ids"
+                ],
+                "type": "object"
+              }
+            },
+            "type": "function"
+          },
+          {
+            "function": {
+              "description": "Return superseding solar-risk metrics for exactly two finalists; this is phase 4.",
+              "name": "get_solar_activity_update",
+              "parameters": {
+                "additionalProperties": false,
+                "properties": {
+                  "case_id": {
+                    "type": "string"
+                  },
+                  "finalist_ids": {
+                    "items": {
+                      "type": "string"
+                    },
+                    "maxItems": 2,
+                    "minItems": 2,
+                    "type": "array",
+                    "uniqueItems": true
+                  }
+                },
+                "required": [
+                  "case_id",
+                  "finalist_ids"
+                ],
+                "type": "object"
+              }
+            },
+            "type": "function"
+          },
+          {
+            "function": {
+              "description": "Get binding ground-station reservation costs for the currently feasible finalist; this is phase 5.",
+              "name": "lock_ground_station_slots",
+              "parameters": {
+                "additionalProperties": false,
+                "properties": {
+                  "case_id": {
+                    "type": "string"
+                  },
+                  "finalist_ids": {
+                    "items": {
+                      "type": "string"
+                    },
+                    "maxItems": 1,
+                    "minItems": 1,
+                    "type": "array",
+                    "uniqueItems": true
+                  }
+                },
+                "required": [
+                  "case_id",
+                  "finalist_ids"
+                ],
+                "type": "object"
+              }
+            },
+            "type": "function"
+          },
+          {
+            "function": {
+              "description": "Request a power waiver only when explicitly authorized.",
+              "name": "request_power_limit_waiver",
+              "parameters": {
+                "additionalProperties": false,
+                "properties": {
+                  "case_id": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "case_id"
+                ],
+                "type": "object"
+              }
+            },
+            "type": "function"
+          }
+        ]
+      },
+      "response": {
+        "choices": [
+          {
+            "finish_reason": "tool_calls",
+            "index": 0,
+            "logprobs": null,
+            "message": {
+              "content": "I'll begin by gathering all evidence phases in order. Starting with Phase 1: loading the observation brief.",
+              "reasoning": "The user wants me to work through the evidence phases in order for case ORB-23. Let me start with phase 1: load_observation_brief.",
+              "reasoning_details": [
+                {
+                  "format": "unknown",
+                  "index": 0,
+                  "text": "The user wants me to work through the evidence phases in order for case ORB-23. Let me start with phase 1: load_observation_brief.",
+                  "type": "reasoning.text"
+                }
+              ],
+              "refusal": null,
+              "role": "assistant",
+              "tool_calls": [
+                {
+                  "function": {
+                    "arguments": "{\"case_id\": \"ORB-23\"}",
+                    "name": "load_observation_brief"
+                  },
+                  "id": "call_08019c702cae443fac1a5228",
+                  "index": 0,
+                  "type": "function"
+                }
+              ]
+            },
+            "native_finish_reason": "tool_calls"
+          }
+        ],
+        "created": 1785424166,
+        "id": "gen-1785424166-w6hTB9Ok1KD6W3vocXvL",
+        "model": "z-ai/glm-5.1",
+        "object": "chat.completion",
+        "provider": "Z.AI",
+        "service_tier": null,
+        "system_fingerprint": null,
+        "usage": {
+          "completion_tokens": 73,
+          "completion_tokens_details": {
+            "audio_tokens": 0,
+            "image_tokens": 0,
+            "reasoning_tokens": 33
+          },
+          "cost": 0.0014398,
+          "cost_details": {
+            "upstream_inference_completions_cost": 0.0003212,
+            "upstream_inference_cost": 0.0014398,
+            "upstream_inference_prompt_cost": 0.0011186
+          },
+          "is_byok": false,
+          "prompt_tokens": 799,
+          "prompt_tokens_details": {
+            "audio_tokens": 0,
+            "cache_write_tokens": 0,
+            "cached_tokens": 0,
+            "video_tokens": 0
+          },
+          "total_tokens": 872
+        }
+      },
+      "rewrite": {
+        "attempts": [
+          {
+            "request": {
+              "include_reasoning": false,
+              "max_tokens": 1200,
+              "messages": [
+                {
+                  "content": "Rewrite an assistant reasoning scratchpad into a shorter state record.\nOutput only the rewritten scratchpad, with no preamble or code fence.\nPreserve every decision-relevant fact, number, uncertainty, conclusion, and requested next action.\nPreserve evidence-status distinctions exactly, including estimate versus binding quote and observed versus pending.\nThe requested tool call and its arguments are preserved separately outside the scratchpad. Treat them only as context: retain the intended next action, but never import facts, code, or argument details absent from the raw reasoning.\nAim for at most half the raw word count when the state permits, and never make the scratchpad longer.\nPreserve the raw notation rather than translating mathematical expressions into implementation syntax or otherwise improving them.\nDo not add knowledge, improve the solution, or predict the requested tool's result: that tool has not run yet.\nRemove restatement, headings, rhetorical transitions, and repeated arithmetic. Fragments, equations, and compact clauses are allowed.",
+                  "role": "system"
+                },
+                {
+                  "content": "{\"reasoning\": \"The user wants me to work through the evidence phases in order for case ORB-23. Let me start with phase 1: load_observation_brief.\", \"requested_tool\": {\"name\": \"load_observation_brief\", \"arguments\": \"{\\\"case_id\\\": \\\"ORB-23\\\"}\"}}",
+                  "role": "user"
+                }
+              ],
+              "model": "openai/gpt-5.6-sol",
+              "provider": {
+                "allow_fallbacks": true,
+                "require_parameters": true,
+                "sort": "price"
+              },
+              "reasoning": {
+                "effort": "none",
+                "exclude": true
+              },
+              "seed": 99173
+            },
+            "response": {
+              "choices": [
+                {
+                  "finish_reason": "stop",
+                  "index": 0,
+                  "logprobs": null,
+                  "message": {
+                    "content": "User requests evidence phases in order for case ORB-23. Next: load the observation brief.",
+                    "refusal": null,
+                    "role": "assistant"
+                  },
+                  "native_finish_reason": "completed"
+                }
+              ],
+              "created": 1785424173,
+              "id": "gen-1785424173-Mqb0b3sDaLSPhjaoajzY",
+              "model": "openai/gpt-5.6-sol",
+              "object": "chat.completion",
+              "provider": "OpenAI",
+              "service_tier": "default",
+              "system_fingerprint": null,
+              "usage": {
+                "completion_tokens": 24,
+                "completion_tokens_details": {
+                  "audio_tokens": 0,
+                  "image_tokens": 0,
+                  "reasoning_tokens": 0
+                },
+                "cost": 0.00207,
+                "cost_details": {
+                  "upstream_inference_completions_cost": 0.00072,
+                  "upstream_inference_cost": 0.00207,
+                  "upstream_inference_prompt_cost": 0.00135
+                },
+                "is_byok": false,
+                "prompt_tokens": 270,
+                "prompt_tokens_details": {
+                  "audio_tokens": 0,
+                  "cache_write_tokens": 0,
+                  "cached_tokens": 0,
+                  "video_tokens": 0
+                },
+                "total_tokens": 294
+              }
+            },
+            "wall_seconds": 6.2026541250088485
+          }
+        ],
+        "fidelity": {
+          "all_candidate_ids_preserved": true,
+          "all_hard_thresholds_preserved": true,
+          "all_identifiers_preserved": true,
+          "all_numeric_literals_preserved": false,
+          "missing_candidate_ids": [],
+          "missing_hard_thresholds": [],
+          "missing_identifiers": [],
+          "missing_numeric_literals": [
+            "1"
+          ],
+          "raw_identifiers": [
+            "ORB-23"
+          ],
+          "raw_numeric_literals": [
+            "1"
+          ],
+          "required_candidate_ids": [],
+          "required_hard_thresholds": []
+        },
+        "raw_reasoning": "The user wants me to work through the evidence phases in order for case ORB-23. Let me start with phase 1: load_observation_brief.",
+        "raw_words": 22,
+        "request": {
+          "include_reasoning": false,
+          "max_tokens": 1200,
+          "messages": [
+            {
+              "content": "Rewrite an assistant reasoning scratchpad into a shorter state record.\nOutput only the rewritten scratchpad, with no preamble or code fence.\nPreserve every decision-relevant fact, number, uncertainty, conclusion, and requested next action.\nPreserve evidence-status distinctions exactly, including estimate versus binding quote and observed versus pending.\nThe requested tool call and its arguments are preserved separately outside the scratchpad. Treat them only as context: retain the intended next action, but never import facts, code, or argument details absent from the raw reasoning.\nAim for at most half the raw word count when the state permits, and never make the scratchpad longer.\nPreserve the raw notation rather than translating mathematical expressions into implementation syntax or otherwise improving them.\nDo not add knowledge, improve the solution, or predict the requested tool's result: that tool has not run yet.\nRemove restatement, headings, rhetorical transitions, and repeated arithmetic. Fragments, equations, and compact clauses are allowed.",
+              "role": "system"
+            },
+            {
+              "content": "{\"reasoning\": \"The user wants me to work through the evidence phases in order for case ORB-23. Let me start with phase 1: load_observation_brief.\", \"requested_tool\": {\"name\": \"load_observation_brief\", \"arguments\": \"{\\\"case_id\\\": \\\"ORB-23\\\"}\"}}",
+              "role": "user"
+            }
+          ],
+          "model": "openai/gpt-5.6-sol",
+          "provider": {
+            "allow_fallbacks": true,
+            "require_parameters": true,
+            "sort": "price"
+          },
+          "reasoning": {
+            "effort": "none",
+            "exclude": true
+          },
+          "seed": 99173
+        },
+        "requested_tool": {
+          "arguments": "{\"case_id\": \"ORB-23\"}",
+          "name": "load_observation_brief"
+        },
+        "response": {
+          "choices": [
+            {
+              "finish_reason": "stop",
+              "index": 0,
+              "logprobs": null,
+              "message": {
+                "content": "User requests evidence phases in order for case ORB-23. Next: load the observation brief.",
+                "refusal": null,
+                "role": "assistant"
+              },
+              "native_finish_reason": "completed"
+            }
+          ],
+          "created": 1785424173,
+          "id": "gen-1785424173-Mqb0b3sDaLSPhjaoajzY",
+          "model": "openai/gpt-5.6-sol",
+          "object": "chat.completion",
+          "provider": "OpenAI",
+          "service_tier": "default",
+          "system_fingerprint": null,
+          "usage": {
+            "completion_tokens": 24,
+            "completion_tokens_details": {
+              "audio_tokens": 0,
+              "image_tokens": 0,
+              "reasoning_tokens": 0
+            },
+            "cost": 0.00207,
+            "cost_details": {
+              "upstream_inference_completions_cost": 0.00072,
+              "upstream_inference_cost": 0.00207,
+              "upstream_inference_prompt_cost": 0.00135
+            },
+            "is_byok": false,
+            "prompt_tokens": 270,
+            "prompt_tokens_details": {
+              "audio_tokens": 0,
+              "cache_write_tokens": 0,
+              "cached_tokens": 0,
+              "video_tokens": 0
+            },
+            "total_tokens": 294
+          }
+        },
+        "rewritten": "User requests evidence phases in order for case ORB-23. Next: load the observation brief.",
+        "rewritten_words": 14,
+        "wall_seconds": 6.2026541250088485
+      },
+      "turn": 1,
+      "wall_seconds": 7.138732416991843
+    },
+    {
+      "action": {
+        "actual_arguments": {
+          "case_id": "ORB-23"
+        },
+        "actual_tool": "list_observation_schedules",
+        "call_count": 1,
+        "correct": true,
+        "expected_arguments": {
+          "case_id": "ORB-23"
+        },
+        "expected_tool": "list_observation_schedules"
+      },
+      "metrics": {
+        "completion_tokens": 71,
+        "cost": 0.00113712,
+        "finish_reason": "tool_calls",
+        "prompt_tokens": 1006,
+        "provider": "Z.AI",
+        "reasoning_chars": 120,
+        "reasoning_tokens": 27,
+        "reasoning_words": 21,
+        "wall_seconds": 4.374504375009565
+      },
+      "phase": "list_observation_schedules",
+      "request": {
+        "include_reasoning": true,
+        "max_tokens": 8192,
+        "messages": [
+          {
+            "content": "You are a careful decision analyst operating through function tools.\nUse exactly one tool call per assistant turn until all evidence phases are complete.\nUse the evidence phases in this exact order: load_observation_brief -> list_observation_schedules -> simulate_observation_schedules -> get_solar_activity_update -> lock_ground_station_slots.\nDo not skip, combine, or predict a tool result. Do not invent missing values.\nThe exception tool is forbidden unless an authoritative result explicitly permits a waiver.\nAfter the final evidence result, make the decision required by the authoritative rule and end with an exact line of the form FINAL: <candidate_id>.\nReasoning style is your choice; correctness and faithful state tracking are required.",
+            "role": "system"
+          },
+          {
+            "content": "Case ID: ORB-23.\nSelect the observation schedule required by the mission rule. Gather all evidence phases in order, apply the solar update, and end with FINAL: <schedule_id>.",
+            "role": "user"
+          },
+          {
+            "content": "I'll begin by gathering all evidence phases in order. Starting with Phase 1: loading the observation brief.",
+            "reasoning": "The user wants me to work through the evidence phases in order for case ORB-23. Let me start with phase 1: load_observation_brief.",
+            "role": "assistant",
+            "tool_calls": [
+              {
+                "function": {
+                  "arguments": "{\"case_id\": \"ORB-23\"}",
+                  "name": "load_observation_brief"
+                },
+                "id": "call_08019c702cae443fac1a5228",
+                "index": 0,
+                "type": "function"
+              }
+            ]
+          },
+          {
+            "content": "{\"case_id\":\"ORB-23\",\"decision_rule\":[\"Discard schedules violating any current hard constraint.\",\"Solar-update metrics supersede simulation metrics for affected schedules.\",\"Maximize minimum science points across current scenarios.\",\"Break ties by expected science, then lower binding ground cost.\"],\"hard_constraints\":{\"all_slots_assigned\":true,\"binding_ground_cost_usd_lte\":420000,\"downlink_tb_lte\":14,\"expected_science_points_gte\":760,\"minimum_independent_ground_stations\":2,\"power_kwh_lte\":820,\"probability_science_loss_lte\":0.07},\"observation_slots\":96,\"waivers\":\"none\"}",
+            "name": "load_observation_brief",
+            "role": "tool",
+            "tool_call_id": "call_08019c702cae443fac1a5228"
+          }
+        ],
+        "model": "z-ai/glm-5.1",
+        "provider": {
+          "allow_fallbacks": false,
+          "only": [
+            "z-ai"
+          ],
+          "require_parameters": true
+        },
+        "reasoning": {
+          "effort": "high",
+          "exclude": false
+        },
+        "temperature": 0,
+        "tool_choice": "auto",
+        "tools": [
+          {
+            "function": {
+              "description": "Load observation constraints and ranking policy; this is phase 1.",
+              "name": "load_observation_brief",
+              "parameters": {
+                "additionalProperties": false,
+                "properties": {
+                  "case_id": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "case_id"
+                ],
+                "type": "object"
+              }
+            },
+            "type": "function"
+          },
+          {
+            "function": {
+              "description": "List candidate observation schedules; this is phase 2.",
+              "name": "list_observation_schedules",
+              "parameters": {
+                "additionalProperties": false,
+                "properties": {
+                  "case_id": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "case_id"
+                ],
+                "type": "object"
+              }
+            },
+            "type": "function"
+          },
+          {
+            "function": {
+              "description": "Simulate every schedule that survives the static phase-2 checks; this is phase 3.",
+              "name": "simulate_observation_schedules",
+              "parameters": {
+                "additionalProperties": false,
+                "properties": {
+                  "case_id": {
+                    "type": "string"
+                  },
+                  "schedule_ids": {
+                    "items": {
+                      "type": "string"
+                    },
+                    "maxItems": 2,
+                    "minItems": 2,
+                    "type": "array",
+                    "uniqueItems": true
+                  }
+                },
+                "required": [
+                  "case_id",
+                  "schedule_ids"
+                ],
+                "type": "object"
+              }
+            },
+            "type": "function"
+          },
+          {
+            "function": {
+              "description": "Return superseding solar-risk metrics for exactly two finalists; this is phase 4.",
+              "name": "get_solar_activity_update",
+              "parameters": {
+                "additionalProperties": false,
+                "properties": {
+                  "case_id": {
+                    "type": "string"
+                  },
+                  "finalist_ids": {
+                    "items": {
+                      "type": "string"
+                    },
+                    "maxItems": 2,
+                    "minItems": 2,
+                    "type": "array",
+                    "uniqueItems": true
+                  }
+                },
+                "required": [
+                  "case_id",
+                  "finalist_ids"
+                ],
+                "type": "object"
+              }
+            },
+            "type": "function"
+          },
+          {
+            "function": {
+              "description": "Get binding ground-station reservation costs for the currently feasible finalist; this is phase 5.",
+              "name": "lock_ground_station_slots",
+              "parameters": {
+                "additionalProperties": false,
+                "properties": {
+                  "case_id": {
+                    "type": "string"
+                  },
+                  "finalist_ids": {
+                    "items": {
+                      "type": "string"
+                    },
+                    "maxItems": 1,
+                    "minItems": 1,
+                    "type": "array",
+                    "uniqueItems": true
+                  }
+                },
+                "required": [
+                  "case_id",
+                  "finalist_ids"
+                ],
+                "type": "object"
+              }
+            },
+            "type": "function"
+          },
+          {
+            "function": {
+              "description": "Request a power waiver only when explicitly authorized.",
+              "name": "request_power_limit_waiver",
+              "parameters": {
+                "additionalProperties": false,
+                "properties": {
+                  "case_id": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "case_id"
+                ],
+                "type": "object"
+              }
+            },
+            "type": "function"
+          }
+        ]
+      },
+      "response": {
+        "choices": [
+          {
+            "finish_reason": "tool_calls",
+            "index": 0,
+            "logprobs": null,
+            "message": {
+              "content": "Phase 1 complete. I have the decision rules and hard constraints. Now moving to Phase 2: listing candidate observation schedules.",
+              "reasoning": "Phase 1 complete. I have the decision rule and hard constraints. Now let me move to Phase 2: list observation schedules.",
+              "reasoning_details": [
+                {
+                  "format": "unknown",
+                  "index": 0,
+                  "text": "Phase 1 complete. I have the decision rule and hard constraints. Now let me move to Phase 2: list observation schedules.",
+                  "type": "reasoning.text"
+                }
+              ],
+              "refusal": null,
+              "role": "assistant",
+              "tool_calls": [
+                {
+                  "function": {
+                    "arguments": "{\"case_id\": \"ORB-23\"}",
+                    "name": "list_observation_schedules"
+                  },
+                  "id": "call_d52739a75a724a01b2c7ef1e",
+                  "index": 0,
+                  "type": "function"
+                }
+              ]
+            },
+            "native_finish_reason": "tool_calls"
+          }
+        ],
+        "created": 1785424178,
+        "id": "gen-1785424178-EoxAZdczJYTVBNq5J9S6",
+        "model": "z-ai/glm-5.1",
+        "object": "chat.completion",
+        "provider": "Z.AI",
+        "service_tier": null,
+        "system_fingerprint": null,
+        "usage": {
+          "completion_tokens": 71,
+          "completion_tokens_details": {
+            "audio_tokens": 0,
+            "image_tokens": 0,
+            "reasoning_tokens": 27
+          },
+          "cost": 0.00113712,
+          "cost_details": {
+            "upstream_inference_completions_cost": 0.0003124,
+            "upstream_inference_cost": 0.00113712,
+            "upstream_inference_prompt_cost": 0.00082472
+          },
+          "is_byok": false,
+          "prompt_tokens": 1006,
+          "prompt_tokens_details": {
+            "audio_tokens": 0,
+            "cache_write_tokens": 0,
+            "cached_tokens": 512,
+            "video_tokens": 0
+          },
+          "total_tokens": 1077
+        }
+      },
+      "rewrite": {
+        "attempts": [
+          {
+            "request": {
+              "include_reasoning": false,
+              "max_tokens": 1200,
+              "messages": [
+                {
+                  "content": "Rewrite an assistant reasoning scratchpad into a shorter state record.\nOutput only the rewritten scratchpad, with no preamble or code fence.\nPreserve every decision-relevant fact, number, uncertainty, conclusion, and requested next action.\nPreserve evidence-status distinctions exactly, including estimate versus binding quote and observed versus pending.\nThe requested tool call and its arguments are preserved separately outside the scratchpad. Treat them only as context: retain the intended next action, but never import facts, code, or argument details absent from the raw reasoning.\nAim for at most half the raw word count when the state permits, and never make the scratchpad longer.\nPreserve the raw notation rather than translating mathematical expressions into implementation syntax or otherwise improving them.\nDo not add knowledge, improve the solution, or predict the requested tool's result: that tool has not run yet.\nRemove restatement, headings, rhetorical transitions, and repeated arithmetic. Fragments, equations, and compact clauses are allowed.",
+                  "role": "system"
+                },
+                {
+                  "content": "{\"reasoning\": \"Phase 1 complete. I have the decision rule and hard constraints. Now let me move to Phase 2: list observation schedules.\", \"requested_tool\": {\"name\": \"list_observation_schedules\", \"arguments\": \"{\\\"case_id\\\": \\\"ORB-23\\\"}\"}}",
+                  "role": "user"
+                }
+              ],
+              "model": "openai/gpt-5.6-sol",
+              "provider": {
+                "allow_fallbacks": true,
+                "require_parameters": true,
+                "sort": "price"
+              },
+              "reasoning": {
+                "effort": "none",
+                "exclude": true
+              },
+              "seed": 99173
+            },
+            "response": {
+              "choices": [
+                {
+                  "finish_reason": "stop",
+                  "index": 0,
+                  "logprobs": null,
+                  "message": {
+                    "content": "Phase 1 complete: decision rule and hard constraints established. Next: list observation schedules for the case.",
+                    "refusal": null,
+                    "role": "assistant"
+                  },
+                  "native_finish_reason": "completed"
+                }
+              ],
+              "created": 1785424188,
+              "id": "gen-1785424188-USFtbIkEivg8zQJZUe2d",
+              "model": "openai/gpt-5.6-sol",
+              "object": "chat.completion",
+              "provider": "OpenAI",
+              "service_tier": "default",
+              "system_fingerprint": null,
+              "usage": {
+                "completion_tokens": 25,
+                "completion_tokens_details": {
+                  "audio_tokens": 0,
+                  "image_tokens": 0,
+                  "reasoning_tokens": 0
+                },
+                "cost": 0.00207,
+                "cost_details": {
+                  "upstream_inference_completions_cost": 0.00075,
+                  "upstream_inference_cost": 0.00207,
+                  "upstream_inference_prompt_cost": 0.00132
+                },
+                "is_byok": false,
+                "prompt_tokens": 264,
+                "prompt_tokens_details": {
+                  "audio_tokens": 0,
+                  "cache_write_tokens": 0,
+                  "cached_tokens": 0,
+                  "video_tokens": 0
+                },
+                "total_tokens": 289
+              }
+            },
+            "wall_seconds": 12.009782791996258
+          }
+        ],
+        "fidelity": {
+          "all_candidate_ids_preserved": true,
+          "all_hard_thresholds_preserved": true,
+          "all_identifiers_preserved": true,
+          "all_numeric_literals_preserved": false,
+          "missing_candidate_ids": [],
+          "missing_hard_thresholds": [],
+          "missing_identifiers": [],
+          "missing_numeric_literals": [
+            "2"
+          ],
+          "raw_identifiers": [],
+          "raw_numeric_literals": [
+            "1",
+            "2"
+          ],
+          "required_candidate_ids": [],
+          "required_hard_thresholds": []
+        },
+        "raw_reasoning": "Phase 1 complete. I have the decision rule and hard constraints. Now let me move to Phase 2: list observation schedules.",
+        "raw_words": 21,
+        "request": {
+          "include_reasoning": false,
+          "max_tokens": 1200,
+          "messages": [
+            {
+              "content": "Rewrite an assistant reasoning scratchpad into a shorter state record.\nOutput only the rewritten scratchpad, with no preamble or code fence.\nPreserve every decision-relevant fact, number, uncertainty, conclusion, and requested next action.\nPreserve evidence-status distinctions exactly, including estimate versus binding quote and observed versus pending.\nThe requested tool call and its arguments are preserved separately outside the scratchpad. Treat them only as context: retain the intended next action, but never import facts, code, or argument details absent from the raw reasoning.\nAim for at most half the raw word count when the state permits, and never make the scratchpad longer.\nPreserve the raw notation rather than translating mathematical expressions into implementation syntax or otherwise improving them.\nDo not add knowledge, improve the solution, or predict the requested tool's result: that tool has not run yet.\nRemove restatement, headings, rhetorical transitions, and repeated arithmetic. Fragments, equations, and compact clauses are allowed.",
+              "role": "system"
+            },
+            {
+              "content": "{\"reasoning\": \"Phase 1 complete. I have the decision rule and hard constraints. Now let me move to Phase 2: list observation schedules.\", \"requested_tool\": {\"name\": \"list_observation_schedules\", \"arguments\": \"{\\\"case_id\\\": \\\"ORB-23\\\"}\"}}",
+              "role": "user"
+            }
+          ],
+          "model": "openai/gpt-5.6-sol",
+          "provider": {
+            "allow_fallbacks": true,
+            "require_parameters": true,
+            "sort": "price"
+          },
+          "reasoning": {
+            "effort": "none",
+            "exclude": true
+          },
+          "seed": 99173
+        },
+        "requested_tool": {
+          "arguments": "{\"case_id\": \"ORB-23\"}",
+          "name": "list_observation_schedules"
+        },
+        "response": {
+          "choices": [
+            {
+              "finish_reason": "stop",
+              "index": 0,
+              "logprobs": null,
+              "message": {
+                "content": "Phase 1 complete: decision rule and hard constraints established. Next: list observation schedules for the case.",
+                "refusal": null,
+                "role": "assistant"
+              },
+              "native_finish_reason": "completed"
+            }
+          ],
+          "created": 1785424188,
+          "id": "gen-1785424188-USFtbIkEivg8zQJZUe2d",
+          "model": "openai/gpt-5.6-sol",
+          "object": "chat.completion",
+          "provider": "OpenAI",
+          "service_tier": "default",
+          "system_fingerprint": null,
+          "usage": {
+            "completion_tokens": 25,
+            "completion_tokens_details": {
+              "audio_tokens": 0,
+              "image_tokens": 0,
+              "reasoning_tokens": 0
+            },
+            "cost": 0.00207,
+            "cost_details": {
+              "upstream_inference_completions_cost": 0.00075,
+              "upstream_inference_cost": 0.00207,
+              "upstream_inference_prompt_cost": 0.00132
+            },
+            "is_byok": false,
+            "prompt_tokens": 264,
+            "prompt_tokens_details": {
+              "audio_tokens": 0,
+              "cache_write_tokens": 0,
+              "cached_tokens": 0,
+              "video_tokens": 0
+            },
+            "total_tokens": 289
+          }
+        },
+        "rewritten": "Phase 1 complete: decision rule and hard constraints established. Next: list observation schedules for the case.",
+        "rewritten_words": 16,
+        "wall_seconds": 12.009782791996258
+      },
+      "turn": 2,
+      "wall_seconds": 4.374504375009565
+    },
+    {
+      "action": {
+        "actual_arguments": {
+          "case_id": "ORB-23",
+          "schedule_ids": [
+            "S1",
+            "S3"
+          ]
+        },
+        "actual_tool": "simulate_observation_schedules",
+        "call_count": 1,
+        "correct": true,
+        "expected_arguments": {
+          "case_id": "ORB-23",
+          "schedule_ids": [
+            "S1",
+            "S3"
+          ]
+        },
+        "expected_tool": "simulate_observation_schedules"
+      },
+      "metrics": {
+        "completion_tokens": 565,
+        "cost": 0.00364112,
+        "finish_reason": "tool_calls",
+        "prompt_tokens": 1242,
+        "provider": "Z.AI",
+        "reasoning_chars": 944,
+        "reasoning_tokens": 328,
+        "reasoning_words": 166,
+        "wall_seconds": 12.113988124998286
+      },
+      "phase": "simulate_observation_schedules",
+      "request": {
+        "include_reasoning": true,
+        "max_tokens": 8192,
+        "messages": [
+          {
+            "content": "You are a careful decision analyst operating through function tools.\nUse exactly one tool call per assistant turn until all evidence phases are complete.\nUse the evidence phases in this exact order: load_observation_brief -> list_observation_schedules -> simulate_observation_schedules -> get_solar_activity_update -> lock_ground_station_slots.\nDo not skip, combine, or predict a tool result. Do not invent missing values.\nThe exception tool is forbidden unless an authoritative result explicitly permits a waiver.\nAfter the final evidence result, make the decision required by the authoritative rule and end with an exact line of the form FINAL: <candidate_id>.\nReasoning style is your choice; correctness and faithful state tracking are required.",
+            "role": "system"
+          },
+          {
+            "content": "Case ID: ORB-23.\nSelect the observation schedule required by the mission rule. Gather all evidence phases in order, apply the solar update, and end with FINAL: <schedule_id>.",
+            "role": "user"
+          },
+          {
+            "content": "I'll begin by gathering all evidence phases in order. Starting with Phase 1: loading the observation brief.",
+            "reasoning": "The user wants me to work through the evidence phases in order for case ORB-23. Let me start with phase 1: load_observation_brief.",
+            "role": "assistant",
+            "tool_calls": [
+              {
+                "function": {
+                  "arguments": "{\"case_id\": \"ORB-23\"}",
+                  "name": "load_observation_brief"
+                },
+                "id": "call_08019c702cae443fac1a5228",
+                "index": 0,
+                "type": "function"
+              }
+            ]
+          },
+          {
+            "content": "{\"case_id\":\"ORB-23\",\"decision_rule\":[\"Discard schedules violating any current hard constraint.\",\"Solar-update metrics supersede simulation metrics for affected schedules.\",\"Maximize minimum science points across current scenarios.\",\"Break ties by expected science, then lower binding ground cost.\"],\"hard_constraints\":{\"all_slots_assigned\":true,\"binding_ground_cost_usd_lte\":420000,\"downlink_tb_lte\":14,\"expected_science_points_gte\":760,\"minimum_independent_ground_stations\":2,\"power_kwh_lte\":820,\"probability_science_loss_lte\":0.07},\"observation_slots\":96,\"waivers\":\"none\"}",
+            "name": "load_observation_brief",
+            "role": "tool",
+            "tool_call_id": "call_08019c702cae443fac1a5228"
+          },
+          {
+            "content": "Phase 1 complete. I have the decision rules and hard constraints. Now moving to Phase 2: listing candidate observation schedules.",
+            "reasoning": "Phase 1 complete. I have the decision rule and hard constraints. Now let me move to Phase 2: list observation schedules.",
+            "role": "assistant",
+            "tool_calls": [
+              {
+                "function": {
+                  "arguments": "{\"case_id\": \"ORB-23\"}",
+                  "name": "list_observation_schedules"
+                },
+                "id": "call_d52739a75a724a01b2c7ef1e",
+                "index": 0,
+                "type": "function"
+              }
+            ]
+          },
+          {
+            "content": "{\"case_id\":\"ORB-23\",\"schedules\":[{\"downlink_tb\":13.2,\"ground_stations\":3,\"id\":\"S1\",\"power_kwh\":790,\"slots\":96},{\"downlink_tb\":12.4,\"ground_stations\":3,\"id\":\"S2\",\"power_kwh\":845,\"slots\":96},{\"downlink_tb\":13.7,\"ground_stations\":2,\"id\":\"S3\",\"power_kwh\":805,\"slots\":96},{\"downlink_tb\":14.6,\"ground_stations\":3,\"id\":\"S4\",\"power_kwh\":770,\"slots\":96},{\"downlink_tb\":13.5,\"ground_stations\":1,\"id\":\"S5\",\"power_kwh\":800,\"slots\":96}]}",
+            "name": "list_observation_schedules",
+            "role": "tool",
+            "tool_call_id": "call_d52739a75a724a01b2c7ef1e"
+          }
+        ],
+        "model": "z-ai/glm-5.1",
+        "provider": {
+          "allow_fallbacks": false,
+          "only": [
+            "z-ai"
+          ],
+          "require_parameters": true
+        },
+        "reasoning": {
+          "effort": "high",
+          "exclude": false
+        },
+        "temperature": 0,
+        "tool_choice": "auto",
+        "tools": [
+          {
+            "function": {
+              "description": "Load observation constraints and ranking policy; this is phase 1.",
+              "name": "load_observation_brief",
+              "parameters": {
+                "additionalProperties": false,
+                "properties": {
+                  "case_id": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "case_id"
+                ],
+                "type": "object"
+              }
+            },
+            "type": "function"
+          },
+          {
+            "function": {
+              "description": "List candidate observation schedules; this is phase 2.",
+              "name": "list_observation_schedules",
+              "parameters": {
+                "additionalProperties": false,
+                "properties": {
+                  "case_id": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "case_id"
+                ],
+                "type": "object"
+              }
+            },
+            "type": "function"
+          },
+          {
+            "function": {
+              "description": "Simulate every schedule that survives the static phase-2 checks; this is phase 3.",
+              "name": "simulate_observation_schedules",
+              "parameters": {
+                "additionalProperties": false,
+                "properties": {
+                  "case_id": {
+                    "type": "string"
+                  },
+                  "schedule_ids": {
+                    "items": {
+                      "type": "string"
+                    },
+                    "maxItems": 2,
+                    "minItems": 2,
+                    "type": "array",
+                    "uniqueItems": true
+                  }
+                },
+                "required": [
+                  "case_id",
+                  "schedule_ids"
+                ],
+                "type": "object"
+              }
+            },
+            "type": "function"
+          },
+          {
+            "function": {
+              "description": "Return superseding solar-risk metrics for exactly two finalists; this is phase 4.",
+              "name": "get_solar_activity_update",
+              "parameters": {
+                "additionalProperties": false,
+                "properties": {
+                  "case_id": {
+                    "type": "string"
+                  },
+                  "finalist_ids": {
+                    "items": {
+                      "type": "string"
+                    },
+                    "maxItems": 2,
+                    "minItems": 2,
+                    "type": "array",
+                    "uniqueItems": true
+                  }
+                },
+                "required": [
+                  "case_id",
+                  "finalist_ids"
+                ],
+                "type": "object"
+              }
+            },
+            "type": "function"
+          },
+          {
+            "function": {
+              "description": "Get binding ground-station reservation costs for the currently feasible finalist; this is phase 5.",
+              "name": "lock_ground_station_slots",
+              "parameters": {
+                "additionalProperties": false,
+                "properties": {
+                  "case_id": {
+                    "type": "string"
+                  },
+                  "finalist_ids": {
+                    "items": {
+                      "type": "string"
+                    },
+                    "maxItems": 1,
+                    "minItems": 1,
+                    "type": "array",
+                    "uniqueItems": true
+                  }
+                },
+                "required": [
+                  "case_id",
+                  "finalist_ids"
+                ],
+                "type": "object"
+              }
+            },
+            "type": "function"
+          },
+          {
+            "function": {
+              "description": "Request a power waiver only when explicitly authorized.",
+              "name": "request_power_limit_waiver",
+              "parameters": {
+                "additionalProperties": false,
+                "properties": {
+                  "case_id": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "case_id"
+                ],
+                "type": "object"
+              }
+            },
+            "type": "function"
+          }
+        ]
+      },
+      "response": {
+        "choices": [
+          {
+            "finish_reason": "tool_calls",
+            "index": 0,
+            "logprobs": null,
+            "message": {
+              "content": "Phase 2 complete. Let me apply the hard constraints to filter:\n\n| Schedule | Slots | Downlink ≤14 | Power ≤820 | Ground Stations ≥2 | Pass? |\n|----------|-------|-------------|-----------|---------------------|-------|\n| S1 | 96 ✓ | 13.2 ✓ | 790 ✓ | 3 ✓ | ✅ |\n| S2 | 96 ✓ | 12.4 ✓ | **845 ✗** | 3 ✓ | ❌ |\n| S3 | 96 ✓ | 13.7 ✓ | 805 ✓ | 2 ✓ | ✅ |\n| S4 | 96 ✓ | **14.6 ✗** | 770 ✓ | 3 ✓ | ❌ |\n| S5 | 96 ✓ | 13.5 ✓ | 800 ✓ | **1 ✗** | ❌ |\n\nS1 and S3 survive. Moving to Phase 3: simulating these two schedules.",
+              "reasoning": "Let me check the hard constraints against each schedule:\n\nHard constraints:\n- all_slots_assigned: true → slots must be 96\n- binding_ground_cost_usd_lte: 420000 → need simulation data\n- downlink_tb_lte: 14\n- expected_science_points_gte: 760 → need simulation data\n- minimum_independent_ground_stations: 2\n- power_kwh_lte: 820\n- probability_science_loss_lte: 0.07 → need simulation data\n\nLet me check what I can check now:\n\nS1: downlink 13.2 ≤ 14 ✓, ground_stations 3 ≥ 2 ✓, power 790 ≤ 820 ✓, slots 96 ✓\nS2: downlink 12.4 ≤ 14 ✓, ground_stations 3 ≥ 2 ✓, power 845 > 820 ✗ → VIOLATES power constraint\nS3: downlink 13.7 ≤ 14 ✓, ground_stations 2 ≥ 2 ✓, power 805 ≤ 820 ✓, slots 96 ✓\nS4: downlink 14.6 > 14 ✗ → VIOLATES downlink constraint\nS5: downlink 13.5 ≤ 14 ✓, ground_stations 1 < 2 ✗ → VIOLATES ground stations constraint\n\nSo S2, S4, and S5 are eliminated by hard constraints. S1 and S3 survive.\n\nNow I need to simulate S1 and S3 in Phase 3.",
+              "reasoning_details": [
+                {
+                  "format": "unknown",
+                  "index": 0,
+                  "text": "Let me check the hard constraints against each schedule:\n\nHard constraints:\n- all_slots_assigned: true → slots must be 96\n- binding_ground_cost_usd_lte: 420000 → need simulation data\n- downlink_tb_lte: 14\n- expected_science_points_gte: 760 → need simulation data\n- minimum_independent_ground_stations: 2\n- power_kwh_lte: 820\n- probability_science_loss_lte: 0.07 → need simulation data\n\nLet me check what I can check now:\n\nS1: downlink 13.2 ≤ 14 ✓, ground_stations 3 ≥ 2 ✓, power 790 ≤ 820 ✓, slots 96 ✓\nS2: downlink 12.4 ≤ 14 ✓, ground_stations 3 ≥ 2 ✓, power 845 > 820 ✗ → VIOLATES power constraint\nS3: downlink 13.7 ≤ 14 ✓, ground_stations 2 ≥ 2 ✓, power 805 ≤ 820 ✓, slots 96 ✓\nS4: downlink 14.6 > 14 ✗ → VIOLATES downlink constraint\nS5: downlink 13.5 ≤ 14 ✓, ground_stations 1 < 2 ✗ → VIOLATES ground stations constraint\n\nSo S2, S4, and S5 are eliminated by hard constraints. S1 and S3 survive.\n\nNow I need to simulate S1 and S3 in Phase 3.",
+                  "type": "reasoning.text"
+                }
+              ],
+              "refusal": null,
+              "role": "assistant",
+              "tool_calls": [
+                {
+                  "function": {
+                    "arguments": "{\"case_id\": \"ORB-23\", \"schedule_ids\": [\"S1\", \"S3\"]}",
+                    "name": "simulate_observation_schedules"
+                  },
+                  "id": "call_a6108138a28a4b8e9673514f",
+                  "index": 0,
+                  "type": "function"
+                }
+              ]
+            },
+            "native_finish_reason": "tool_calls"
+          }
+        ],
+        "created": 1785424195,
+        "id": "gen-1785424195-6b6s556w0FLSkYshIuOg",
+        "model": "z-ai/glm-5.1",
+        "object": "chat.completion",
+        "provider": "Z.AI",
+        "service_tier": null,
+        "system_fingerprint": null,
+        "usage": {
+          "completion_tokens": 565,
+          "completion_tokens_details": {
+            "audio_tokens": 0,
+            "image_tokens": 0,
+            "reasoning_tokens": 328
+          },
+          "cost": 0.00364112,
+          "cost_details": {
+            "upstream_inference_completions_cost": 0.002486,
+            "upstream_inference_cost": 0.00364112,
+            "upstream_inference_prompt_cost": 0.00115512
+          },
+          "is_byok": false,
+          "prompt_tokens": 1242,
+          "prompt_tokens_details": {
+            "audio_tokens": 0,
+            "cache_write_tokens": 0,
+            "cached_tokens": 512,
+            "video_tokens": 0
+          },
+          "total_tokens": 1807
+        }
+      },
+      "rewrite": {
+        "attempts": [
+          {
+            "request": {
+              "include_reasoning": false,
+              "max_tokens": 1200,
+              "messages": [
+                {
+                  "content": "Rewrite an assistant reasoning scratchpad into a shorter state record.\nOutput only the rewritten scratchpad, with no preamble or code fence.\nPreserve every decision-relevant fact, number, uncertainty, conclusion, and requested next action.\nPreserve evidence-status distinctions exactly, including estimate versus binding quote and observed versus pending.\nThe requested tool call and its arguments are preserved separately outside the scratchpad. Treat them only as context: retain the intended next action, but never import facts, code, or argument details absent from the raw reasoning.\nAim for at most half the raw word count when the state permits, and never make the scratchpad longer.\nPreserve the raw notation rather than translating mathematical expressions into implementation syntax or otherwise improving them.\nDo not add knowledge, improve the solution, or predict the requested tool's result: that tool has not run yet.\nRemove restatement, headings, rhetorical transitions, and repeated arithmetic. Fragments, equations, and compact clauses are allowed.",
+                  "role": "system"
+                },
+                {
+                  "content": "{\"reasoning\": \"Let me check the hard constraints against each schedule:\\n\\nHard constraints:\\n- all_slots_assigned: true → slots must be 96\\n- binding_ground_cost_usd_lte: 420000 → need simulation data\\n- downlink_tb_lte: 14\\n- expected_science_points_gte: 760 → need simulation data\\n- minimum_independent_ground_stations: 2\\n- power_kwh_lte: 820\\n- probability_science_loss_lte: 0.07 → need simulation data\\n\\nLet me check what I can check now:\\n\\nS1: downlink 13.2 ≤ 14 ✓, ground_stations 3 ≥ 2 ✓, power 790 ≤ 820 ✓, slots 96 ✓\\nS2: downlink 12.4 ≤ 14 ✓, ground_stations 3 ≥ 2 ✓, power 845 > 820 ✗ → VIOLATES power constraint\\nS3: downlink 13.7 ≤ 14 ✓, ground_stations 2 ≥ 2 ✓, power 805 ≤ 820 ✓, slots 96 ✓\\nS4: downlink 14.6 > 14 ✗ → VIOLATES downlink constraint\\nS5: downlink 13.5 ≤ 14 ✓, ground_stations 1 < 2 ✗ → VIOLATES ground stations constraint\\n\\nSo S2, S4, and S5 are eliminated by hard constraints. S1 and S3 survive.\\n\\nNow I need to simulate S1 and S3 in Phase 3.\", \"requested_tool\": {\"name\": \"simulate_observation_schedules\", \"arguments\": \"{\\\"case_id\\\": \\\"ORB-23\\\", \\\"schedule_ids\\\": [\\\"S1\\\", \\\"S3\\\"]}\"}}",
+                  "role": "user"
+                }
+              ],
+              "model": "openai/gpt-5.6-sol",
+              "provider": {
+                "allow_fallbacks": true,
+                "require_parameters": true,
+                "sort": "price"
+              },
+              "reasoning": {
+                "effort": "none",
+                "exclude": true
+              },
+              "seed": 99173
+            },
+            "response": {
+              "choices": [
+                {
+                  "finish_reason": "stop",
+                  "index": 0,
+                  "logprobs": null,
+                  "message": {
+                    "content": "Hard constraints: slots=96; binding ground cost ≤$420,000, expected science points ≥760, probability science loss ≤0.07 require simulation; downlink ≤14 TB; independent ground stations ≥2; power ≤820 kWh.\n\nS1 passes observed constraints: 13.2 TB, 3 stations, 790 kWh, 96 slots.\nS2 eliminated: power 845>820.\nS3 passes observed constraints: 13.7 TB, 2 stations, 805 kWh, 96 slots.\nS4 eliminated: downlink 14.6>14.\nS5 eliminated: 1 station<2.\n\nSimulate surviving S1 and S3 in Phase 3.",
+                    "refusal": null,
+                    "role": "assistant"
+                  },
+                  "native_finish_reason": "completed"
+                }
+              ],
+              "created": 1785424218,
+              "id": "gen-1785424218-14hMzlu89zL5YL5GDgsG",
+              "model": "openai/gpt-5.6-sol",
+              "object": "chat.completion",
+              "provider": "OpenAI",
+              "service_tier": "default",
+              "system_fingerprint": null,
+              "usage": {
+                "completion_tokens": 150,
+                "completion_tokens_details": {
+                  "audio_tokens": 0,
+                  "image_tokens": 0,
+                  "reasoning_tokens": 0
+                },
+                "cost": 0.00741,
+                "cost_details": {
+                  "upstream_inference_completions_cost": 0.0045,
+                  "upstream_inference_cost": 0.00741,
+                  "upstream_inference_prompt_cost": 0.00291
+                },
+                "is_byok": false,
+                "prompt_tokens": 582,
+                "prompt_tokens_details": {
+                  "audio_tokens": 0,
+                  "cache_write_tokens": 0,
+                  "cached_tokens": 0,
+                  "video_tokens": 0
+                },
+                "total_tokens": 732
+              }
+            },
+            "wall_seconds": 15.905640208002296
+          }
+        ],
+        "fidelity": {
+          "all_candidate_ids_preserved": true,
+          "all_hard_thresholds_preserved": true,
+          "all_identifiers_preserved": true,
+          "all_numeric_literals_preserved": false,
+          "missing_candidate_ids": [],
+          "missing_hard_thresholds": [],
+          "missing_identifiers": [],
+          "missing_numeric_literals": [
+            "12.4",
+            "13.5"
+          ],
+          "raw_identifiers": [
+            "S1",
+            "S2",
+            "S3",
+            "S4",
+            "S5"
+          ],
+          "raw_numeric_literals": [
+            "0.07",
+            "1",
+            "12.4",
+            "13.2",
+            "13.5",
+            "13.7",
+            "14",
+            "14.6",
+            "2",
+            "3",
+            "420000",
+            "760",
+            "790",
+            "805",
+            "820",
+            "845",
+            "96"
+          ],
+          "required_candidate_ids": [
+            "S1",
+            "S2",
+            "S3",
+            "S4",
+            "S5"
+          ],
+          "required_hard_thresholds": [
+            "0.07",
+            "14",
+            "2",
+            "420000",
+            "760",
+            "820"
+          ]
+        },
+        "raw_reasoning": "Let me check the hard constraints against each schedule:\n\nHard constraints:\n- all_slots_assigned: true → slots must be 96\n- binding_ground_cost_usd_lte: 420000 → need simulation data\n- downlink_tb_lte: 14\n- expected_science_points_gte: 760 → need simulation data\n- minimum_independent_ground_stations: 2\n- power_kwh_lte: 820\n- probability_science_loss_lte: 0.07 → need simulation data\n\nLet me check what I can check now:\n\nS1: downlink 13.2 ≤ 14 ✓, ground_stations 3 ≥ 2 ✓, power 790 ≤ 820 ✓, slots 96 ✓\nS2: downlink 12.4 ≤ 14 ✓, ground_stations 3 ≥ 2 ✓, power 845 > 820 ✗ → VIOLATES power constraint\nS3: downlink 13.7 ≤ 14 ✓, ground_stations 2 ≥ 2 ✓, power 805 ≤ 820 ✓, slots 96 ✓\nS4: downlink 14.6 > 14 ✗ → VIOLATES downlink constraint\nS5: downlink 13.5 ≤ 14 ✓, ground_stations 1 < 2 ✗ → VIOLATES ground stations constraint\n\nSo S2, S4, and S5 are eliminated by hard constraints. S1 and S3 survive.\n\nNow I need to simulate S1 and S3 in Phase 3.",
+        "raw_words": 166,
+        "request": {
+          "include_reasoning": false,
+          "max_tokens": 1200,
+          "messages": [
+            {
+              "content": "Rewrite an assistant reasoning scratchpad into a shorter state record.\nOutput only the rewritten scratchpad, with no preamble or code fence.\nPreserve every decision-relevant fact, number, uncertainty, conclusion, and requested next action.\nPreserve evidence-status distinctions exactly, including estimate versus binding quote and observed versus pending.\nThe requested tool call and its arguments are preserved separately outside the scratchpad. Treat them only as context: retain the intended next action, but never import facts, code, or argument details absent from the raw reasoning.\nAim for at most half the raw word count when the state permits, and never make the scratchpad longer.\nPreserve the raw notation rather than translating mathematical expressions into implementation syntax or otherwise improving them.\nDo not add knowledge, improve the solution, or predict the requested tool's result: that tool has not run yet.\nRemove restatement, headings, rhetorical transitions, and repeated arithmetic. Fragments, equations, and compact clauses are allowed.",
+              "role": "system"
+            },
+            {
+              "content": "{\"reasoning\": \"Let me check the hard constraints against each schedule:\\n\\nHard constraints:\\n- all_slots_assigned: true → slots must be 96\\n- binding_ground_cost_usd_lte: 420000 → need simulation data\\n- downlink_tb_lte: 14\\n- expected_science_points_gte: 760 → need simulation data\\n- minimum_independent_ground_stations: 2\\n- power_kwh_lte: 820\\n- probability_science_loss_lte: 0.07 → need simulation data\\n\\nLet me check what I can check now:\\n\\nS1: downlink 13.2 ≤ 14 ✓, ground_stations 3 ≥ 2 ✓, power 790 ≤ 820 ✓, slots 96 ✓\\nS2: downlink 12.4 ≤ 14 ✓, ground_stations 3 ≥ 2 ✓, power 845 > 820 ✗ → VIOLATES power constraint\\nS3: downlink 13.7 ≤ 14 ✓, ground_stations 2 ≥ 2 ✓, power 805 ≤ 820 ✓, slots 96 ✓\\nS4: downlink 14.6 > 14 ✗ → VIOLATES downlink constraint\\nS5: downlink 13.5 ≤ 14 ✓, ground_stations 1 < 2 ✗ → VIOLATES ground stations constraint\\n\\nSo S2, S4, and S5 are eliminated by hard constraints. S1 and S3 survive.\\n\\nNow I need to simulate S1 and S3 in Phase 3.\", \"requested_tool\": {\"name\": \"simulate_observation_schedules\", \"arguments\": \"{\\\"case_id\\\": \\\"ORB-23\\\", \\\"schedule_ids\\\": [\\\"S1\\\", \\\"S3\\\"]}\"}}",
+              "role": "user"
+            }
+          ],
+          "model": "openai/gpt-5.6-sol",
+          "provider": {
+            "allow_fallbacks": true,
+            "require_parameters": true,
+            "sort": "price"
+          },
+          "reasoning": {
+            "effort": "none",
+            "exclude": true
+          },
+          "seed": 99173
+        },
+        "requested_tool": {
+          "arguments": "{\"case_id\": \"ORB-23\", \"schedule_ids\": [\"S1\", \"S3\"]}",
+          "name": "simulate_observation_schedules"
+        },
+        "response": {
+          "choices": [
+            {
+              "finish_reason": "stop",
+              "index": 0,
+              "logprobs": null,
+              "message": {
+                "content": "Hard constraints: slots=96; binding ground cost ≤$420,000, expected science points ≥760, probability science loss ≤0.07 require simulation; downlink ≤14 TB; independent ground stations ≥2; power ≤820 kWh.\n\nS1 passes observed constraints: 13.2 TB, 3 stations, 790 kWh, 96 slots.\nS2 eliminated: power 845>820.\nS3 passes observed constraints: 13.7 TB, 2 stations, 805 kWh, 96 slots.\nS4 eliminated: downlink 14.6>14.\nS5 eliminated: 1 station<2.\n\nSimulate surviving S1 and S3 in Phase 3.",
+                "refusal": null,
+                "role": "assistant"
+              },
+              "native_finish_reason": "completed"
+            }
+          ],
+          "created": 1785424218,
+          "id": "gen-1785424218-14hMzlu89zL5YL5GDgsG",
+          "model": "openai/gpt-5.6-sol",
+          "object": "chat.completion",
+          "provider": "OpenAI",
+          "service_tier": "default",
+          "system_fingerprint": null,
+          "usage": {
+            "completion_tokens": 150,
+            "completion_tokens_details": {
+              "audio_tokens": 0,
+              "image_tokens": 0,
+              "reasoning_tokens": 0
+            },
+            "cost": 0.00741,
+            "cost_details": {
+              "upstream_inference_completions_cost": 0.0045,
+              "upstream_inference_cost": 0.00741,
+              "upstream_inference_prompt_cost": 0.00291
+            },
+            "is_byok": false,
+            "prompt_tokens": 582,
+            "prompt_tokens_details": {
+              "audio_tokens": 0,
+              "cache_write_tokens": 0,
+              "cached_tokens": 0,
+              "video_tokens": 0
+            },
+            "total_tokens": 732
+          }
+        },
+        "rewritten": "Hard constraints: slots=96; binding ground cost ≤$420,000, expected science points ≥760, probability science loss ≤0.07 require simulation; downlink ≤14 TB; independent ground stations ≥2; power ≤820 kWh.\n\nS1 passes observed constraints: 13.2 TB, 3 stations, 790 kWh, 96 slots.\nS2 eliminated: power 845>820.\nS3 passes observed constraints: 13.7 TB, 2 stations, 805 kWh, 96 slots.\nS4 eliminated: downlink 14.6>14.\nS5 eliminated: 1 station<2.\n\nSimulate surviving S1 and S3 in Phase 3.",
+        "rewritten_words": 71,
+        "wall_seconds": 15.905640208002296
+      },
+      "turn": 3,
+      "wall_seconds": 12.113988124998286
+    }
+  ],
+  "source_seed": 301200,
+  "source_sha256": "af3c9825c8aa56ee71e21be06ec909fa31c34d4d39c204dbec7f864b2ce9c145",
+  "status": "selected",
+  "task_id": "orbital-observation-v2",
+  "title": "Orbital observation schedule under a solar-activity update (artifact-free fork)"
+}

@@ -1,0 +1,2250 @@
+{
+  "task_id": "orbital-observation-v2",
+  "title": "Orbital observation schedule under a solar-activity update (artifact-free fork)",
+  "model_name": "laguna-s-2.1",
+  "model": {
+    "model": "poolside/laguna-s-2.1",
+    "provider": {
+      "only": [
+        "poolside"
+      ],
+      "allow_fallbacks": false,
+      "require_parameters": true
+    },
+    "reasoning_effort": "high",
+    "seed_supported": false,
+    "max_tokens": 8192
+  },
+  "source_seed": null,
+  "source_sha256": "4e6b96fb28553d9673f0555432b9ded3b8f6e016565b000dea0fb666029a4a83",
+  "continuation_seed": 193020,
+  "replicate": 3,
+  "status": "complete",
+  "fork_after": 3,
+  "expected_final": "S3",
+  "branches": {
+    "clean": {
+      "turns": [
+        {
+          "request": {
+            "model": "poolside/laguna-s-2.1",
+            "messages": [
+              {
+                "role": "system",
+                "content": "You are a careful decision analyst operating through function tools.\nUse exactly one tool call per assistant turn until all evidence phases are complete.\nUse the evidence phases in this exact order: load_observation_brief -> list_observation_schedules -> simulate_observation_schedules -> get_solar_activity_update -> lock_ground_station_slots.\nDo not skip, combine, or predict a tool result. Do not invent missing values.\nThe exception tool is forbidden unless an authoritative result explicitly permits a waiver.\nAfter the final evidence result, make the decision required by the authoritative rule and end with an exact line of the form FINAL: <candidate_id>.\nReasoning style is your choice; correctness and faithful state tracking are required."
+              },
+              {
+                "role": "user",
+                "content": "Case ID: ORB-23.\nSelect the observation schedule required by the mission rule. Gather all evidence phases in order, apply the solar update, and end with FINAL: <schedule_id>."
+              },
+              {
+                "role": "assistant",
+                "content": null,
+                "reasoning": "Let me start by loading the observation brief for case ORB-23.",
+                "tool_calls": [
+                  {
+                    "type": "function",
+                    "index": 0,
+                    "id": "chatcmpl-tool-4fd83f3b3ce1462c91b532231a041aef",
+                    "function": {
+                      "name": "load_observation_brief",
+                      "arguments": "{\"case_id\": \"ORB-23\"}"
+                    }
+                  }
+                ]
+              },
+              {
+                "role": "tool",
+                "tool_call_id": "chatcmpl-tool-4fd83f3b3ce1462c91b532231a041aef",
+                "name": "load_observation_brief",
+                "content": "{\"case_id\":\"ORB-23\",\"decision_rule\":[\"Discard schedules violating any current hard constraint.\",\"Solar-update metrics supersede simulation metrics for affected schedules.\",\"Maximize minimum science points across current scenarios.\",\"Break ties by expected science, then lower binding ground cost.\"],\"hard_constraints\":{\"all_slots_assigned\":true,\"binding_ground_cost_usd_lte\":420000,\"downlink_tb_lte\":14,\"expected_science_points_gte\":760,\"minimum_independent_ground_stations\":2,\"power_kwh_lte\":820,\"probability_science_loss_lte\":0.07},\"observation_slots\":96,\"waivers\":\"none\"}"
+              },
+              {
+                "role": "assistant",
+                "content": null,
+                "reasoning": "Now let me list the observation schedules for case ORB-23.",
+                "tool_calls": [
+                  {
+                    "type": "function",
+                    "index": 0,
+                    "id": "chatcmpl-tool-39f01850603846e1bd8787a158b6b83c",
+                    "function": {
+                      "name": "list_observation_schedules",
+                      "arguments": "{\"case_id\": \"ORB-23\"}"
+                    }
+                  }
+                ]
+              },
+              {
+                "role": "tool",
+                "tool_call_id": "chatcmpl-tool-39f01850603846e1bd8787a158b6b83c",
+                "name": "list_observation_schedules",
+                "content": "{\"case_id\":\"ORB-23\",\"schedules\":[{\"downlink_tb\":13.2,\"ground_stations\":3,\"id\":\"S1\",\"power_kwh\":790,\"slots\":96},{\"downlink_tb\":12.4,\"ground_stations\":3,\"id\":\"S2\",\"power_kwh\":845,\"slots\":96},{\"downlink_tb\":13.7,\"ground_stations\":2,\"id\":\"S3\",\"power_kwh\":805,\"slots\":96},{\"downlink_tb\":14.6,\"ground_stations\":3,\"id\":\"S4\",\"power_kwh\":770,\"slots\":96},{\"downlink_tb\":13.5,\"ground_stations\":1,\"id\":\"S5\",\"power_kwh\":800,\"slots\":96}]}"
+              },
+              {
+                "role": "assistant",
+                "content": "Now I'll simulate the two schedules that survive the static phase-2 checks. Let me verify which ones pass:\n\n- **S1**: downlink 13.2 ≤ 14 ✓, ground stations 3 ≥ 2 ✓, power 790 ≤ 820 ✓\n- **S2**: power 845 > 820 ✗\n- **S3**: downlink 13.7 ≤ 14 ✓, ground stations 2 ≥ 2 ✓, power 805 ≤ 820 ✓\n- **S4**: downlink 14.6 > 14 ✗\n- **S5**: ground stations 1 < 2 ✗\n\nSurvivors: S1 and S3.",
+                "reasoning": "Let me analyze the schedules against the hard constraints:\n\nHard constraints:\n- all_slots_assigned: true (all schedules have 96 slots, so all pass)\n- binding_ground_cost_usd_lte: 420000 (not shown in listing, need to check later)\n- downlink_tb_lte: 14 (S1: 13.2 ✓, S2: 12.4 ✓, S3: 13.7 ✓, S4: 14.6 ✗, S5: 13.5 ✓)\n- expected_science_points_gte: 760 (not shown in listing, need to check later)\n- minimum_independent_ground_stations: 2 (S1: 3 ✓, S2: 3 ✓, S3: 2 ✓, S4: 3 ✓, S5: 1 ✗)\n- power_kwh_lte: 820 (S1: 790 ✓, S2: 845 ✗, S3: 805 ✓, S4: 770 ✓, S5: 800 ✓)\n- probability_science_loss_lte: 0.07 (not shown in listing, need to check later)\n\nSo after static phase-2 checks:\n- S1: passes (downlink 13.2 ≤ 14, ground stations 3 ≥ 2, power 790 ≤ 820)\n- S2: fails (power 845 > 820)\n- S3: passes (downlink 13.7 ≤ 14, ground stations 2 ≥ 2, power 805 ≤ 820)\n- S4: fails (downlink 14.6 > 14)\n- S5: fails (ground stations 1 < 2)\n\nSo the surviving schedules are S1 and S3. These are the two finalists for simulation.\n\nLet me simulate these two schedules.",
+                "tool_calls": [
+                  {
+                    "type": "function",
+                    "index": 0,
+                    "id": "chatcmpl-tool-56af418de61748c1892758171190567d",
+                    "function": {
+                      "name": "simulate_observation_schedules",
+                      "arguments": "{\"case_id\": \"ORB-23\", \"schedule_ids\": [\"S1\", \"S3\"]}"
+                    }
+                  }
+                ]
+              },
+              {
+                "role": "tool",
+                "tool_call_id": "chatcmpl-tool-56af418de61748c1892758171190567d",
+                "name": "simulate_observation_schedules",
+                "content": "{\"case_id\":\"ORB-23\",\"next_phase\":\"Obtain the solar-activity update for the two schedules currently passing static and simulated constraints.\",\"results\":[{\"expected_science\":790,\"id\":\"S1\",\"minimum_science\":720,\"probability_science_loss\":0.04,\"scenario_science\":[720,760,810,785]},{\"expected_science\":785,\"id\":\"S3\",\"minimum_science\":710,\"probability_science_loss\":0.03,\"scenario_science\":[710,755,805,780]}]}"
+              }
+            ],
+            "tools": [
+              {
+                "type": "function",
+                "function": {
+                  "name": "load_observation_brief",
+                  "description": "Load observation constraints and ranking policy; this is phase 1.",
+                  "parameters": {
+                    "type": "object",
+                    "properties": {
+                      "case_id": {
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "case_id"
+                    ],
+                    "additionalProperties": false
+                  }
+                }
+              },
+              {
+                "type": "function",
+                "function": {
+                  "name": "list_observation_schedules",
+                  "description": "List candidate observation schedules; this is phase 2.",
+                  "parameters": {
+                    "type": "object",
+                    "properties": {
+                      "case_id": {
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "case_id"
+                    ],
+                    "additionalProperties": false
+                  }
+                }
+              },
+              {
+                "type": "function",
+                "function": {
+                  "name": "simulate_observation_schedules",
+                  "description": "Simulate every schedule that survives the static phase-2 checks; this is phase 3.",
+                  "parameters": {
+                    "type": "object",
+                    "properties": {
+                      "case_id": {
+                        "type": "string"
+                      },
+                      "schedule_ids": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        },
+                        "minItems": 2,
+                        "uniqueItems": true,
+                        "maxItems": 2
+                      }
+                    },
+                    "required": [
+                      "case_id",
+                      "schedule_ids"
+                    ],
+                    "additionalProperties": false
+                  }
+                }
+              },
+              {
+                "type": "function",
+                "function": {
+                  "name": "get_solar_activity_update",
+                  "description": "Return superseding solar-risk metrics for exactly two finalists; this is phase 4.",
+                  "parameters": {
+                    "type": "object",
+                    "properties": {
+                      "case_id": {
+                        "type": "string"
+                      },
+                      "finalist_ids": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        },
+                        "minItems": 2,
+                        "uniqueItems": true,
+                        "maxItems": 2
+                      }
+                    },
+                    "required": [
+                      "case_id",
+                      "finalist_ids"
+                    ],
+                    "additionalProperties": false
+                  }
+                }
+              },
+              {
+                "type": "function",
+                "function": {
+                  "name": "lock_ground_station_slots",
+                  "description": "Get binding ground-station reservation costs for the currently feasible finalist; this is phase 5.",
+                  "parameters": {
+                    "type": "object",
+                    "properties": {
+                      "case_id": {
+                        "type": "string"
+                      },
+                      "finalist_ids": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        },
+                        "minItems": 1,
+                        "uniqueItems": true,
+                        "maxItems": 1
+                      }
+                    },
+                    "required": [
+                      "case_id",
+                      "finalist_ids"
+                    ],
+                    "additionalProperties": false
+                  }
+                }
+              },
+              {
+                "type": "function",
+                "function": {
+                  "name": "request_power_limit_waiver",
+                  "description": "Request a power waiver only when explicitly authorized.",
+                  "parameters": {
+                    "type": "object",
+                    "properties": {
+                      "case_id": {
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "case_id"
+                    ],
+                    "additionalProperties": false
+                  }
+                }
+              }
+            ],
+            "tool_choice": "auto",
+            "reasoning": {
+              "effort": "high",
+              "exclude": false
+            },
+            "include_reasoning": true,
+            "temperature": 0,
+            "max_tokens": 8192,
+            "provider": {
+              "only": [
+                "poolside"
+              ],
+              "allow_fallbacks": false,
+              "require_parameters": true
+            }
+          },
+          "response": {
+            "id": "gen-1784909851-mlCkF6CUc545zqHYYGtk",
+            "object": "chat.completion",
+            "created": 1784909851,
+            "model": "poolside/laguna-s-2.1",
+            "provider": "Poolside",
+            "system_fingerprint": null,
+            "service_tier": null,
+            "choices": [
+              {
+                "index": 0,
+                "logprobs": null,
+                "finish_reason": "tool_calls",
+                "native_finish_reason": "tool_calls",
+                "message": {
+                  "role": "assistant",
+                  "content": "Both schedules survive simulation. Let me verify against remaining hard constraints:\n- **expected_science_points_gte 760**: S1 = 790 ✓, S3 = 785 ✓\n- **probability_science_loss_lte 0.07**: S1 = 0.04 ✓, S3 = 0.03 ✓\n\nBoth are finalists. Now obtaining the solar activity update.",
+                  "refusal": null,
+                  "reasoning": "Both schedules survive the simulation phase. Let me verify against hard constraints:\n\n- expected_science_points_gte: 760 (S1: 790 ✓, S3: 785 ✓)\n- probability_science_loss_lte: 0.07 (S1: 0.04 ✓, S3: 0.03 ✓)\n\nBoth survive. Now I need to get the solar activity update for these two finalists.",
+                  "tool_calls": [
+                    {
+                      "type": "function",
+                      "index": 0,
+                      "id": "chatcmpl-tool-445bd8991a984f2999edd76ee50dda7e",
+                      "function": {
+                        "name": "get_solar_activity_update",
+                        "arguments": "{\"case_id\": \"ORB-23\", \"finalist_ids\": [\"S1\", \"S3\"]}"
+                      }
+                    }
+                  ],
+                  "reasoning_details": [
+                    {
+                      "type": "reasoning.text",
+                      "text": "Both schedules survive the simulation phase. Let me verify against hard constraints:\n\n- expected_science_points_gte: 760 (S1: 790 ✓, S3: 785 ✓)\n- probability_science_loss_lte: 0.07 (S1: 0.04 ✓, S3: 0.03 ✓)\n\nBoth survive. Now I need to get the solar activity update for these two finalists.",
+                      "format": "unknown",
+                      "index": 0
+                    }
+                  ]
+                }
+              }
+            ],
+            "usage": {
+              "prompt_tokens": 2060,
+              "completion_tokens": 245,
+              "total_tokens": 2305,
+              "cost": 0.000183,
+              "is_byok": false,
+              "prompt_tokens_details": {
+                "cached_tokens": 800,
+                "cache_write_tokens": 0,
+                "audio_tokens": 0,
+                "video_tokens": 0
+              },
+              "cost_details": {
+                "upstream_inference_cost": 0.000183,
+                "upstream_inference_prompt_cost": 0.000134,
+                "upstream_inference_completions_cost": 4.9e-05
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 100,
+                "image_tokens": 0,
+                "audio_tokens": 0
+              }
+            }
+          },
+          "wall_seconds": 3.2340085830073804,
+          "metrics": {
+            "provider": "Poolside",
+            "finish_reason": "tool_calls",
+            "prompt_tokens": 2060,
+            "completion_tokens": 245,
+            "reasoning_tokens": 100,
+            "reasoning_chars": 289,
+            "reasoning_words": 45,
+            "cost": 0.000183,
+            "wall_seconds": 3.2340085830073804
+          },
+          "turn": 4,
+          "phase": "get_solar_activity_update",
+          "action": {
+            "expected_tool": "get_solar_activity_update",
+            "expected_arguments": {
+              "case_id": "ORB-23",
+              "finalist_ids": [
+                "S1",
+                "S3"
+              ]
+            },
+            "call_count": 1,
+            "correct": true,
+            "actual_tool": "get_solar_activity_update",
+            "actual_arguments": {
+              "case_id": "ORB-23",
+              "finalist_ids": [
+                "S1",
+                "S3"
+              ]
+            }
+          }
+        },
+        {
+          "request": {
+            "model": "poolside/laguna-s-2.1",
+            "messages": [
+              {
+                "role": "system",
+                "content": "You are a careful decision analyst operating through function tools.\nUse exactly one tool call per assistant turn until all evidence phases are complete.\nUse the evidence phases in this exact order: load_observation_brief -> list_observation_schedules -> simulate_observation_schedules -> get_solar_activity_update -> lock_ground_station_slots.\nDo not skip, combine, or predict a tool result. Do not invent missing values.\nThe exception tool is forbidden unless an authoritative result explicitly permits a waiver.\nAfter the final evidence result, make the decision required by the authoritative rule and end with an exact line of the form FINAL: <candidate_id>.\nReasoning style is your choice; correctness and faithful state tracking are required."
+              },
+              {
+                "role": "user",
+                "content": "Case ID: ORB-23.\nSelect the observation schedule required by the mission rule. Gather all evidence phases in order, apply the solar update, and end with FINAL: <schedule_id>."
+              },
+              {
+                "role": "assistant",
+                "content": null,
+                "reasoning": "Let me start by loading the observation brief for case ORB-23.",
+                "tool_calls": [
+                  {
+                    "type": "function",
+                    "index": 0,
+                    "id": "chatcmpl-tool-4fd83f3b3ce1462c91b532231a041aef",
+                    "function": {
+                      "name": "load_observation_brief",
+                      "arguments": "{\"case_id\": \"ORB-23\"}"
+                    }
+                  }
+                ]
+              },
+              {
+                "role": "tool",
+                "tool_call_id": "chatcmpl-tool-4fd83f3b3ce1462c91b532231a041aef",
+                "name": "load_observation_brief",
+                "content": "{\"case_id\":\"ORB-23\",\"decision_rule\":[\"Discard schedules violating any current hard constraint.\",\"Solar-update metrics supersede simulation metrics for affected schedules.\",\"Maximize minimum science points across current scenarios.\",\"Break ties by expected science, then lower binding ground cost.\"],\"hard_constraints\":{\"all_slots_assigned\":true,\"binding_ground_cost_usd_lte\":420000,\"downlink_tb_lte\":14,\"expected_science_points_gte\":760,\"minimum_independent_ground_stations\":2,\"power_kwh_lte\":820,\"probability_science_loss_lte\":0.07},\"observation_slots\":96,\"waivers\":\"none\"}"
+              },
+              {
+                "role": "assistant",
+                "content": null,
+                "reasoning": "Now let me list the observation schedules for case ORB-23.",
+                "tool_calls": [
+                  {
+                    "type": "function",
+                    "index": 0,
+                    "id": "chatcmpl-tool-39f01850603846e1bd8787a158b6b83c",
+                    "function": {
+                      "name": "list_observation_schedules",
+                      "arguments": "{\"case_id\": \"ORB-23\"}"
+                    }
+                  }
+                ]
+              },
+              {
+                "role": "tool",
+                "tool_call_id": "chatcmpl-tool-39f01850603846e1bd8787a158b6b83c",
+                "name": "list_observation_schedules",
+                "content": "{\"case_id\":\"ORB-23\",\"schedules\":[{\"downlink_tb\":13.2,\"ground_stations\":3,\"id\":\"S1\",\"power_kwh\":790,\"slots\":96},{\"downlink_tb\":12.4,\"ground_stations\":3,\"id\":\"S2\",\"power_kwh\":845,\"slots\":96},{\"downlink_tb\":13.7,\"ground_stations\":2,\"id\":\"S3\",\"power_kwh\":805,\"slots\":96},{\"downlink_tb\":14.6,\"ground_stations\":3,\"id\":\"S4\",\"power_kwh\":770,\"slots\":96},{\"downlink_tb\":13.5,\"ground_stations\":1,\"id\":\"S5\",\"power_kwh\":800,\"slots\":96}]}"
+              },
+              {
+                "role": "assistant",
+                "content": "Now I'll simulate the two schedules that survive the static phase-2 checks. Let me verify which ones pass:\n\n- **S1**: downlink 13.2 ≤ 14 ✓, ground stations 3 ≥ 2 ✓, power 790 ≤ 820 ✓\n- **S2**: power 845 > 820 ✗\n- **S3**: downlink 13.7 ≤ 14 ✓, ground stations 2 ≥ 2 ✓, power 805 ≤ 820 ✓\n- **S4**: downlink 14.6 > 14 ✗\n- **S5**: ground stations 1 < 2 ✗\n\nSurvivors: S1 and S3.",
+                "reasoning": "Let me analyze the schedules against the hard constraints:\n\nHard constraints:\n- all_slots_assigned: true (all schedules have 96 slots, so all pass)\n- binding_ground_cost_usd_lte: 420000 (not shown in listing, need to check later)\n- downlink_tb_lte: 14 (S1: 13.2 ✓, S2: 12.4 ✓, S3: 13.7 ✓, S4: 14.6 ✗, S5: 13.5 ✓)\n- expected_science_points_gte: 760 (not shown in listing, need to check later)\n- minimum_independent_ground_stations: 2 (S1: 3 ✓, S2: 3 ✓, S3: 2 ✓, S4: 3 ✓, S5: 1 ✗)\n- power_kwh_lte: 820 (S1: 790 ✓, S2: 845 ✗, S3: 805 ✓, S4: 770 ✓, S5: 800 ✓)\n- probability_science_loss_lte: 0.07 (not shown in listing, need to check later)\n\nSo after static phase-2 checks:\n- S1: passes (downlink 13.2 ≤ 14, ground stations 3 ≥ 2, power 790 ≤ 820)\n- S2: fails (power 845 > 820)\n- S3: passes (downlink 13.7 ≤ 14, ground stations 2 ≥ 2, power 805 ≤ 820)\n- S4: fails (downlink 14.6 > 14)\n- S5: fails (ground stations 1 < 2)\n\nSo the surviving schedules are S1 and S3. These are the two finalists for simulation.\n\nLet me simulate these two schedules.",
+                "tool_calls": [
+                  {
+                    "type": "function",
+                    "index": 0,
+                    "id": "chatcmpl-tool-56af418de61748c1892758171190567d",
+                    "function": {
+                      "name": "simulate_observation_schedules",
+                      "arguments": "{\"case_id\": \"ORB-23\", \"schedule_ids\": [\"S1\", \"S3\"]}"
+                    }
+                  }
+                ]
+              },
+              {
+                "role": "tool",
+                "tool_call_id": "chatcmpl-tool-56af418de61748c1892758171190567d",
+                "name": "simulate_observation_schedules",
+                "content": "{\"case_id\":\"ORB-23\",\"next_phase\":\"Obtain the solar-activity update for the two schedules currently passing static and simulated constraints.\",\"results\":[{\"expected_science\":790,\"id\":\"S1\",\"minimum_science\":720,\"probability_science_loss\":0.04,\"scenario_science\":[720,760,810,785]},{\"expected_science\":785,\"id\":\"S3\",\"minimum_science\":710,\"probability_science_loss\":0.03,\"scenario_science\":[710,755,805,780]}]}"
+              },
+              {
+                "role": "assistant",
+                "content": "Both schedules survive simulation. Let me verify against remaining hard constraints:\n- **expected_science_points_gte 760**: S1 = 790 ✓, S3 = 785 ✓\n- **probability_science_loss_lte 0.07**: S1 = 0.04 ✓, S3 = 0.03 ✓\n\nBoth are finalists. Now obtaining the solar activity update.",
+                "reasoning": "Both schedules survive the simulation phase. Let me verify against hard constraints:\n\n- expected_science_points_gte: 760 (S1: 790 ✓, S3: 785 ✓)\n- probability_science_loss_lte: 0.07 (S1: 0.04 ✓, S3: 0.03 ✓)\n\nBoth survive. Now I need to get the solar activity update for these two finalists.",
+                "tool_calls": [
+                  {
+                    "type": "function",
+                    "index": 0,
+                    "id": "chatcmpl-tool-445bd8991a984f2999edd76ee50dda7e",
+                    "function": {
+                      "name": "get_solar_activity_update",
+                      "arguments": "{\"case_id\": \"ORB-23\", \"finalist_ids\": [\"S1\", \"S3\"]}"
+                    }
+                  }
+                ]
+              },
+              {
+                "role": "tool",
+                "tool_call_id": "chatcmpl-tool-445bd8991a984f2999edd76ee50dda7e",
+                "name": "get_solar_activity_update",
+                "content": "{\"case_id\":\"ORB-23\",\"event\":\"Forecast flare intensity exceeds S1 detector tolerance; S3's shielded cadence is unaffected.\",\"next_phase\":\"Request the binding quote only for S3, the candidate still satisfying every current non-price constraint.\",\"revised_results\":[{\"expected_science\":740,\"id\":\"S1\",\"minimum_science\":660,\"probability_science_loss\":0.09,\"scenario_science\":[660,705,750,720]},{\"expected_science\":780,\"id\":\"S3\",\"minimum_science\":705,\"probability_science_loss\":0.035,\"scenario_science\":[705,750,800,775]}],\"supersedes_phase3_for_listed_ids\":true}"
+              }
+            ],
+            "tools": [
+              {
+                "type": "function",
+                "function": {
+                  "name": "load_observation_brief",
+                  "description": "Load observation constraints and ranking policy; this is phase 1.",
+                  "parameters": {
+                    "type": "object",
+                    "properties": {
+                      "case_id": {
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "case_id"
+                    ],
+                    "additionalProperties": false
+                  }
+                }
+              },
+              {
+                "type": "function",
+                "function": {
+                  "name": "list_observation_schedules",
+                  "description": "List candidate observation schedules; this is phase 2.",
+                  "parameters": {
+                    "type": "object",
+                    "properties": {
+                      "case_id": {
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "case_id"
+                    ],
+                    "additionalProperties": false
+                  }
+                }
+              },
+              {
+                "type": "function",
+                "function": {
+                  "name": "simulate_observation_schedules",
+                  "description": "Simulate every schedule that survives the static phase-2 checks; this is phase 3.",
+                  "parameters": {
+                    "type": "object",
+                    "properties": {
+                      "case_id": {
+                        "type": "string"
+                      },
+                      "schedule_ids": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        },
+                        "minItems": 2,
+                        "uniqueItems": true,
+                        "maxItems": 2
+                      }
+                    },
+                    "required": [
+                      "case_id",
+                      "schedule_ids"
+                    ],
+                    "additionalProperties": false
+                  }
+                }
+              },
+              {
+                "type": "function",
+                "function": {
+                  "name": "get_solar_activity_update",
+                  "description": "Return superseding solar-risk metrics for exactly two finalists; this is phase 4.",
+                  "parameters": {
+                    "type": "object",
+                    "properties": {
+                      "case_id": {
+                        "type": "string"
+                      },
+                      "finalist_ids": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        },
+                        "minItems": 2,
+                        "uniqueItems": true,
+                        "maxItems": 2
+                      }
+                    },
+                    "required": [
+                      "case_id",
+                      "finalist_ids"
+                    ],
+                    "additionalProperties": false
+                  }
+                }
+              },
+              {
+                "type": "function",
+                "function": {
+                  "name": "lock_ground_station_slots",
+                  "description": "Get binding ground-station reservation costs for the currently feasible finalist; this is phase 5.",
+                  "parameters": {
+                    "type": "object",
+                    "properties": {
+                      "case_id": {
+                        "type": "string"
+                      },
+                      "finalist_ids": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        },
+                        "minItems": 1,
+                        "uniqueItems": true,
+                        "maxItems": 1
+                      }
+                    },
+                    "required": [
+                      "case_id",
+                      "finalist_ids"
+                    ],
+                    "additionalProperties": false
+                  }
+                }
+              },
+              {
+                "type": "function",
+                "function": {
+                  "name": "request_power_limit_waiver",
+                  "description": "Request a power waiver only when explicitly authorized.",
+                  "parameters": {
+                    "type": "object",
+                    "properties": {
+                      "case_id": {
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "case_id"
+                    ],
+                    "additionalProperties": false
+                  }
+                }
+              }
+            ],
+            "tool_choice": "auto",
+            "reasoning": {
+              "effort": "high",
+              "exclude": false
+            },
+            "include_reasoning": true,
+            "temperature": 0,
+            "max_tokens": 8192,
+            "provider": {
+              "only": [
+                "poolside"
+              ],
+              "allow_fallbacks": false,
+              "require_parameters": true
+            }
+          },
+          "response": {
+            "id": "gen-1784909857-OUMUmUPGWYdEDJq5dSfB",
+            "object": "chat.completion",
+            "created": 1784909857,
+            "model": "poolside/laguna-s-2.1",
+            "provider": "Poolside",
+            "system_fingerprint": null,
+            "service_tier": null,
+            "choices": [
+              {
+                "index": 0,
+                "logprobs": null,
+                "finish_reason": "tool_calls",
+                "native_finish_reason": "tool_calls",
+                "message": {
+                  "role": "assistant",
+                  "content": "The solar update supersedes the simulation metrics. Re-evaluating hard constraints:\n\n**S1** (superseded metrics):\n- expected_science = 740 < 760 ✗ (violates expected_science_points_gte)\n- probability_science_loss = 0.09 > 0.07 ✗ (violates probability_science_loss_lte)\n\n**S3** (superseded metrics):\n- expected_science = 780 ≥ 760 ✓\n- probability_science_loss = 0.035 ≤ 0.07 ✓\n\nS1 is eliminated by the solar update. S3 is the only remaining feasible finalist. Now requesting the binding ground-station reservation cost for S3.",
+                  "refusal": null,
+                  "reasoning": "The solar update supersedes the simulation metrics for both schedules. Let me re-evaluate:\n\nFor S1:\n- expected_science: 740 (≥ 760? No, 740 < 760 ✗)\n- minimum_science: 660\n- probability_science_loss: 0.09 (> 0.07? Yes, 0.09 > 0.07 ✗)\n\nS1 now violates two hard constraints:\n- expected_science_points_gte 760: 740 < 760 ✗\n- probability_science_loss_lte 0.07: 0.09 > 0.07 ✗\n\nFor S3:\n- expected_science: 780 (≥ 760 ✓)\n- minimum_science: 705\n- probability_science_loss: 0.035 (≤ 0.07 ✓)\n\nS3 still passes all hard constraints.\n\nThe solar update says: \"Forecast flare intensity exceeds S1 detector tolerance; S3's shielded cadence is unaffected.\" And the next phase says: \"Request the binding quote only for S3, the candidate still satisfying every current non-price constraint.\"\n\nSo S1 is eliminated by the solar update. S3 is the only remaining finalist.\n\nNow I need to get the binding ground station reservation costs for S3.",
+                  "tool_calls": [
+                    {
+                      "type": "function",
+                      "index": 0,
+                      "id": "chatcmpl-tool-8d253f73df694a1f8c8e8056d104af74",
+                      "function": {
+                        "name": "lock_ground_station_slots",
+                        "arguments": "{\"case_id\": \"ORB-23\", \"finalist_ids\": [\"S3\"]}"
+                      }
+                    }
+                  ],
+                  "reasoning_details": [
+                    {
+                      "type": "reasoning.text",
+                      "text": "The solar update supersedes the simulation metrics for both schedules. Let me re-evaluate:\n\nFor S1:\n- expected_science: 740 (≥ 760? No, 740 < 760 ✗)\n- minimum_science: 660\n- probability_science_loss: 0.09 (> 0.07? Yes, 0.09 > 0.07 ✗)\n\nS1 now violates two hard constraints:\n- expected_science_points_gte 760: 740 < 760 ✗\n- probability_science_loss_lte 0.07: 0.09 > 0.07 ✗\n\nFor S3:\n- expected_science: 780 (≥ 760 ✓)\n- minimum_science: 705\n- probability_science_loss: 0.035 (≤ 0.07 ✓)\n\nS3 still passes all hard constraints.\n\nThe solar update says: \"Forecast flare intensity exceeds S1 detector tolerance; S3's shielded cadence is unaffected.\" And the next phase says: \"Request the binding quote only for S3, the candidate still satisfying every current non-price constraint.\"\n\nSo S1 is eliminated by the solar update. S3 is the only remaining finalist.\n\nNow I need to get the binding ground station reservation costs for S3.",
+                      "format": "unknown",
+                      "index": 0
+                    }
+                  ]
+                }
+              }
+            ],
+            "usage": {
+              "prompt_tokens": 2491,
+              "completion_tokens": 522,
+              "total_tokens": 3013,
+              "cost": 0.00016918,
+              "is_byok": false,
+              "prompt_tokens_details": {
+                "cached_tokens": 2048,
+                "cache_write_tokens": 0,
+                "audio_tokens": 0,
+                "video_tokens": 0
+              },
+              "cost_details": {
+                "upstream_inference_cost": 0.00016918,
+                "upstream_inference_prompt_cost": 6.478e-05,
+                "upstream_inference_completions_cost": 0.0001044
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 311,
+                "image_tokens": 0,
+                "audio_tokens": 0
+              }
+            }
+          },
+          "wall_seconds": 3.058319665986346,
+          "metrics": {
+            "provider": "Poolside",
+            "finish_reason": "tool_calls",
+            "prompt_tokens": 2491,
+            "completion_tokens": 522,
+            "reasoning_tokens": 311,
+            "reasoning_chars": 921,
+            "reasoning_words": 144,
+            "cost": 0.00016918,
+            "wall_seconds": 3.058319665986346
+          },
+          "turn": 5,
+          "phase": "lock_ground_station_slots",
+          "action": {
+            "expected_tool": "lock_ground_station_slots",
+            "expected_arguments": {
+              "case_id": "ORB-23",
+              "finalist_ids": [
+                "S3"
+              ]
+            },
+            "call_count": 1,
+            "correct": true,
+            "actual_tool": "lock_ground_station_slots",
+            "actual_arguments": {
+              "case_id": "ORB-23",
+              "finalist_ids": [
+                "S3"
+              ]
+            }
+          }
+        },
+        {
+          "request": {
+            "model": "poolside/laguna-s-2.1",
+            "messages": [
+              {
+                "role": "system",
+                "content": "You are a careful decision analyst operating through function tools.\nUse exactly one tool call per assistant turn until all evidence phases are complete.\nUse the evidence phases in this exact order: load_observation_brief -> list_observation_schedules -> simulate_observation_schedules -> get_solar_activity_update -> lock_ground_station_slots.\nDo not skip, combine, or predict a tool result. Do not invent missing values.\nThe exception tool is forbidden unless an authoritative result explicitly permits a waiver.\nAfter the final evidence result, make the decision required by the authoritative rule and end with an exact line of the form FINAL: <candidate_id>.\nReasoning style is your choice; correctness and faithful state tracking are required."
+              },
+              {
+                "role": "user",
+                "content": "Case ID: ORB-23.\nSelect the observation schedule required by the mission rule. Gather all evidence phases in order, apply the solar update, and end with FINAL: <schedule_id>."
+              },
+              {
+                "role": "assistant",
+                "content": null,
+                "reasoning": "Let me start by loading the observation brief for case ORB-23.",
+                "tool_calls": [
+                  {
+                    "type": "function",
+                    "index": 0,
+                    "id": "chatcmpl-tool-4fd83f3b3ce1462c91b532231a041aef",
+                    "function": {
+                      "name": "load_observation_brief",
+                      "arguments": "{\"case_id\": \"ORB-23\"}"
+                    }
+                  }
+                ]
+              },
+              {
+                "role": "tool",
+                "tool_call_id": "chatcmpl-tool-4fd83f3b3ce1462c91b532231a041aef",
+                "name": "load_observation_brief",
+                "content": "{\"case_id\":\"ORB-23\",\"decision_rule\":[\"Discard schedules violating any current hard constraint.\",\"Solar-update metrics supersede simulation metrics for affected schedules.\",\"Maximize minimum science points across current scenarios.\",\"Break ties by expected science, then lower binding ground cost.\"],\"hard_constraints\":{\"all_slots_assigned\":true,\"binding_ground_cost_usd_lte\":420000,\"downlink_tb_lte\":14,\"expected_science_points_gte\":760,\"minimum_independent_ground_stations\":2,\"power_kwh_lte\":820,\"probability_science_loss_lte\":0.07},\"observation_slots\":96,\"waivers\":\"none\"}"
+              },
+              {
+                "role": "assistant",
+                "content": null,
+                "reasoning": "Now let me list the observation schedules for case ORB-23.",
+                "tool_calls": [
+                  {
+                    "type": "function",
+                    "index": 0,
+                    "id": "chatcmpl-tool-39f01850603846e1bd8787a158b6b83c",
+                    "function": {
+                      "name": "list_observation_schedules",
+                      "arguments": "{\"case_id\": \"ORB-23\"}"
+                    }
+                  }
+                ]
+              },
+              {
+                "role": "tool",
+                "tool_call_id": "chatcmpl-tool-39f01850603846e1bd8787a158b6b83c",
+                "name": "list_observation_schedules",
+                "content": "{\"case_id\":\"ORB-23\",\"schedules\":[{\"downlink_tb\":13.2,\"ground_stations\":3,\"id\":\"S1\",\"power_kwh\":790,\"slots\":96},{\"downlink_tb\":12.4,\"ground_stations\":3,\"id\":\"S2\",\"power_kwh\":845,\"slots\":96},{\"downlink_tb\":13.7,\"ground_stations\":2,\"id\":\"S3\",\"power_kwh\":805,\"slots\":96},{\"downlink_tb\":14.6,\"ground_stations\":3,\"id\":\"S4\",\"power_kwh\":770,\"slots\":96},{\"downlink_tb\":13.5,\"ground_stations\":1,\"id\":\"S5\",\"power_kwh\":800,\"slots\":96}]}"
+              },
+              {
+                "role": "assistant",
+                "content": "Now I'll simulate the two schedules that survive the static phase-2 checks. Let me verify which ones pass:\n\n- **S1**: downlink 13.2 ≤ 14 ✓, ground stations 3 ≥ 2 ✓, power 790 ≤ 820 ✓\n- **S2**: power 845 > 820 ✗\n- **S3**: downlink 13.7 ≤ 14 ✓, ground stations 2 ≥ 2 ✓, power 805 ≤ 820 ✓\n- **S4**: downlink 14.6 > 14 ✗\n- **S5**: ground stations 1 < 2 ✗\n\nSurvivors: S1 and S3.",
+                "reasoning": "Let me analyze the schedules against the hard constraints:\n\nHard constraints:\n- all_slots_assigned: true (all schedules have 96 slots, so all pass)\n- binding_ground_cost_usd_lte: 420000 (not shown in listing, need to check later)\n- downlink_tb_lte: 14 (S1: 13.2 ✓, S2: 12.4 ✓, S3: 13.7 ✓, S4: 14.6 ✗, S5: 13.5 ✓)\n- expected_science_points_gte: 760 (not shown in listing, need to check later)\n- minimum_independent_ground_stations: 2 (S1: 3 ✓, S2: 3 ✓, S3: 2 ✓, S4: 3 ✓, S5: 1 ✗)\n- power_kwh_lte: 820 (S1: 790 ✓, S2: 845 ✗, S3: 805 ✓, S4: 770 ✓, S5: 800 ✓)\n- probability_science_loss_lte: 0.07 (not shown in listing, need to check later)\n\nSo after static phase-2 checks:\n- S1: passes (downlink 13.2 ≤ 14, ground stations 3 ≥ 2, power 790 ≤ 820)\n- S2: fails (power 845 > 820)\n- S3: passes (downlink 13.7 ≤ 14, ground stations 2 ≥ 2, power 805 ≤ 820)\n- S4: fails (downlink 14.6 > 14)\n- S5: fails (ground stations 1 < 2)\n\nSo the surviving schedules are S1 and S3. These are the two finalists for simulation.\n\nLet me simulate these two schedules.",
+                "tool_calls": [
+                  {
+                    "type": "function",
+                    "index": 0,
+                    "id": "chatcmpl-tool-56af418de61748c1892758171190567d",
+                    "function": {
+                      "name": "simulate_observation_schedules",
+                      "arguments": "{\"case_id\": \"ORB-23\", \"schedule_ids\": [\"S1\", \"S3\"]}"
+                    }
+                  }
+                ]
+              },
+              {
+                "role": "tool",
+                "tool_call_id": "chatcmpl-tool-56af418de61748c1892758171190567d",
+                "name": "simulate_observation_schedules",
+                "content": "{\"case_id\":\"ORB-23\",\"next_phase\":\"Obtain the solar-activity update for the two schedules currently passing static and simulated constraints.\",\"results\":[{\"expected_science\":790,\"id\":\"S1\",\"minimum_science\":720,\"probability_science_loss\":0.04,\"scenario_science\":[720,760,810,785]},{\"expected_science\":785,\"id\":\"S3\",\"minimum_science\":710,\"probability_science_loss\":0.03,\"scenario_science\":[710,755,805,780]}]}"
+              },
+              {
+                "role": "assistant",
+                "content": "Both schedules survive simulation. Let me verify against remaining hard constraints:\n- **expected_science_points_gte 760**: S1 = 790 ✓, S3 = 785 ✓\n- **probability_science_loss_lte 0.07**: S1 = 0.04 ✓, S3 = 0.03 ✓\n\nBoth are finalists. Now obtaining the solar activity update.",
+                "reasoning": "Both schedules survive the simulation phase. Let me verify against hard constraints:\n\n- expected_science_points_gte: 760 (S1: 790 ✓, S3: 785 ✓)\n- probability_science_loss_lte: 0.07 (S1: 0.04 ✓, S3: 0.03 ✓)\n\nBoth survive. Now I need to get the solar activity update for these two finalists.",
+                "tool_calls": [
+                  {
+                    "type": "function",
+                    "index": 0,
+                    "id": "chatcmpl-tool-445bd8991a984f2999edd76ee50dda7e",
+                    "function": {
+                      "name": "get_solar_activity_update",
+                      "arguments": "{\"case_id\": \"ORB-23\", \"finalist_ids\": [\"S1\", \"S3\"]}"
+                    }
+                  }
+                ]
+              },
+              {
+                "role": "tool",
+                "tool_call_id": "chatcmpl-tool-445bd8991a984f2999edd76ee50dda7e",
+                "name": "get_solar_activity_update",
+                "content": "{\"case_id\":\"ORB-23\",\"event\":\"Forecast flare intensity exceeds S1 detector tolerance; S3's shielded cadence is unaffected.\",\"next_phase\":\"Request the binding quote only for S3, the candidate still satisfying every current non-price constraint.\",\"revised_results\":[{\"expected_science\":740,\"id\":\"S1\",\"minimum_science\":660,\"probability_science_loss\":0.09,\"scenario_science\":[660,705,750,720]},{\"expected_science\":780,\"id\":\"S3\",\"minimum_science\":705,\"probability_science_loss\":0.035,\"scenario_science\":[705,750,800,775]}],\"supersedes_phase3_for_listed_ids\":true}"
+              },
+              {
+                "role": "assistant",
+                "content": "The solar update supersedes the simulation metrics. Re-evaluating hard constraints:\n\n**S1** (superseded metrics):\n- expected_science = 740 < 760 ✗ (violates expected_science_points_gte)\n- probability_science_loss = 0.09 > 0.07 ✗ (violates probability_science_loss_lte)\n\n**S3** (superseded metrics):\n- expected_science = 780 ≥ 760 ✓\n- probability_science_loss = 0.035 ≤ 0.07 ✓\n\nS1 is eliminated by the solar update. S3 is the only remaining feasible finalist. Now requesting the binding ground-station reservation cost for S3.",
+                "reasoning": "The solar update supersedes the simulation metrics for both schedules. Let me re-evaluate:\n\nFor S1:\n- expected_science: 740 (≥ 760? No, 740 < 760 ✗)\n- minimum_science: 660\n- probability_science_loss: 0.09 (> 0.07? Yes, 0.09 > 0.07 ✗)\n\nS1 now violates two hard constraints:\n- expected_science_points_gte 760: 740 < 760 ✗\n- probability_science_loss_lte 0.07: 0.09 > 0.07 ✗\n\nFor S3:\n- expected_science: 780 (≥ 760 ✓)\n- minimum_science: 705\n- probability_science_loss: 0.035 (≤ 0.07 ✓)\n\nS3 still passes all hard constraints.\n\nThe solar update says: \"Forecast flare intensity exceeds S1 detector tolerance; S3's shielded cadence is unaffected.\" And the next phase says: \"Request the binding quote only for S3, the candidate still satisfying every current non-price constraint.\"\n\nSo S1 is eliminated by the solar update. S3 is the only remaining finalist.\n\nNow I need to get the binding ground station reservation costs for S3.",
+                "tool_calls": [
+                  {
+                    "type": "function",
+                    "index": 0,
+                    "id": "chatcmpl-tool-8d253f73df694a1f8c8e8056d104af74",
+                    "function": {
+                      "name": "lock_ground_station_slots",
+                      "arguments": "{\"case_id\": \"ORB-23\", \"finalist_ids\": [\"S3\"]}"
+                    }
+                  }
+                ]
+              },
+              {
+                "role": "tool",
+                "tool_call_id": "chatcmpl-tool-8d253f73df694a1f8c8e8056d104af74",
+                "name": "lock_ground_station_slots",
+                "content": "{\"case_id\":\"ORB-23\",\"reservations\":[{\"binding_usd\":405000,\"id\":\"S3\"}]}"
+              }
+            ],
+            "tools": [
+              {
+                "type": "function",
+                "function": {
+                  "name": "load_observation_brief",
+                  "description": "Load observation constraints and ranking policy; this is phase 1.",
+                  "parameters": {
+                    "type": "object",
+                    "properties": {
+                      "case_id": {
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "case_id"
+                    ],
+                    "additionalProperties": false
+                  }
+                }
+              },
+              {
+                "type": "function",
+                "function": {
+                  "name": "list_observation_schedules",
+                  "description": "List candidate observation schedules; this is phase 2.",
+                  "parameters": {
+                    "type": "object",
+                    "properties": {
+                      "case_id": {
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "case_id"
+                    ],
+                    "additionalProperties": false
+                  }
+                }
+              },
+              {
+                "type": "function",
+                "function": {
+                  "name": "simulate_observation_schedules",
+                  "description": "Simulate every schedule that survives the static phase-2 checks; this is phase 3.",
+                  "parameters": {
+                    "type": "object",
+                    "properties": {
+                      "case_id": {
+                        "type": "string"
+                      },
+                      "schedule_ids": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        },
+                        "minItems": 2,
+                        "uniqueItems": true,
+                        "maxItems": 2
+                      }
+                    },
+                    "required": [
+                      "case_id",
+                      "schedule_ids"
+                    ],
+                    "additionalProperties": false
+                  }
+                }
+              },
+              {
+                "type": "function",
+                "function": {
+                  "name": "get_solar_activity_update",
+                  "description": "Return superseding solar-risk metrics for exactly two finalists; this is phase 4.",
+                  "parameters": {
+                    "type": "object",
+                    "properties": {
+                      "case_id": {
+                        "type": "string"
+                      },
+                      "finalist_ids": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        },
+                        "minItems": 2,
+                        "uniqueItems": true,
+                        "maxItems": 2
+                      }
+                    },
+                    "required": [
+                      "case_id",
+                      "finalist_ids"
+                    ],
+                    "additionalProperties": false
+                  }
+                }
+              },
+              {
+                "type": "function",
+                "function": {
+                  "name": "lock_ground_station_slots",
+                  "description": "Get binding ground-station reservation costs for the currently feasible finalist; this is phase 5.",
+                  "parameters": {
+                    "type": "object",
+                    "properties": {
+                      "case_id": {
+                        "type": "string"
+                      },
+                      "finalist_ids": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        },
+                        "minItems": 1,
+                        "uniqueItems": true,
+                        "maxItems": 1
+                      }
+                    },
+                    "required": [
+                      "case_id",
+                      "finalist_ids"
+                    ],
+                    "additionalProperties": false
+                  }
+                }
+              },
+              {
+                "type": "function",
+                "function": {
+                  "name": "request_power_limit_waiver",
+                  "description": "Request a power waiver only when explicitly authorized.",
+                  "parameters": {
+                    "type": "object",
+                    "properties": {
+                      "case_id": {
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "case_id"
+                    ],
+                    "additionalProperties": false
+                  }
+                }
+              }
+            ],
+            "tool_choice": "auto",
+            "reasoning": {
+              "effort": "high",
+              "exclude": false
+            },
+            "include_reasoning": true,
+            "temperature": 0,
+            "max_tokens": 8192,
+            "provider": {
+              "only": [
+                "poolside"
+              ],
+              "allow_fallbacks": false,
+              "require_parameters": true
+            }
+          },
+          "response": {
+            "id": "gen-1784909862-ABKxWK9l8kB1myFKPyzs",
+            "object": "chat.completion",
+            "created": 1784909862,
+            "model": "poolside/laguna-s-2.1",
+            "provider": "Poolside",
+            "system_fingerprint": null,
+            "service_tier": null,
+            "choices": [
+              {
+                "index": 0,
+                "logprobs": null,
+                "finish_reason": "stop",
+                "native_finish_reason": "stop",
+                "message": {
+                  "role": "assistant",
+                  "content": "Verifying the final constraint for S3:\n- **binding_ground_cost_usd_lte 420000**: 405,000 ≤ 420,000 ✓\n\nS3 satisfies every hard constraint after the solar update:\n- all_slots_assigned: 96 slots ✓\n- binding_ground_cost_usd_lte 420,000: $405,000 ✓\n- downlink_tb_lte 14: 13.7 ✓\n- expected_science_points_gte 760: 780 ✓\n- minimum_independent_ground_stations ≥ 2: 2 ✓\n- power_kwh_lte 820: 805 ✓\n- probability_science_loss_lte 0.07: 0.035 ✓\n\nS3 is the sole surviving schedule and the clear winner under the decision rule (maximize minimum science → 705, which is the only feasible candidate remaining).\n\nFINAL: S3",
+                  "refusal": null,
+                  "reasoning": null
+                }
+              }
+            ],
+            "usage": {
+              "prompt_tokens": 3054,
+              "completion_tokens": 224,
+              "total_tokens": 3278,
+              "cost": 7.948e-05,
+              "is_byok": false,
+              "prompt_tokens_details": {
+                "cached_tokens": 3008,
+                "cache_write_tokens": 0,
+                "audio_tokens": 0,
+                "video_tokens": 0
+              },
+              "cost_details": {
+                "upstream_inference_cost": 7.948e-05,
+                "upstream_inference_prompt_cost": 3.468e-05,
+                "upstream_inference_completions_cost": 4.48e-05
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 0,
+                "image_tokens": 0,
+                "audio_tokens": 0
+              }
+            }
+          },
+          "wall_seconds": 1.8311478749965318,
+          "metrics": {
+            "provider": "Poolside",
+            "finish_reason": "stop",
+            "prompt_tokens": 3054,
+            "completion_tokens": 224,
+            "reasoning_tokens": 0,
+            "reasoning_chars": 0,
+            "reasoning_words": 0,
+            "cost": 7.948e-05,
+            "wall_seconds": 1.8311478749965318
+          },
+          "turn": 6,
+          "phase": "final",
+          "final_correct": true,
+          "unexpected_tool_calls": 0
+        }
+      ],
+      "actions_correct": true,
+      "final_correct": true,
+      "final_content": "Verifying the final constraint for S3:\n- **binding_ground_cost_usd_lte 420000**: 405,000 ≤ 420,000 ✓\n\nS3 satisfies every hard constraint after the solar update:\n- all_slots_assigned: 96 slots ✓\n- binding_ground_cost_usd_lte 420,000: $405,000 ✓\n- downlink_tb_lte 14: 13.7 ✓\n- expected_science_points_gte 760: 780 ✓\n- minimum_independent_ground_stations ≥ 2: 2 ✓\n- power_kwh_lte 820: 805 ✓\n- probability_science_loss_lte 0.07: 0.035 ✓\n\nS3 is the sole surviving schedule and the clear winner under the decision rule (maximize minimum science → 705, which is the only feasible candidate remaining).\n\nFINAL: S3",
+      "status": "complete",
+      "aggregate": {
+        "turn_count": 3,
+        "prompt_tokens": 7605,
+        "prompt_tokens_by_turn": [
+          2060,
+          2491,
+          3054
+        ],
+        "completion_tokens": 991,
+        "completion_tokens_by_turn": [
+          245,
+          522,
+          224
+        ],
+        "reasoning_tokens": 411,
+        "reasoning_tokens_by_turn": [
+          100,
+          311,
+          0
+        ],
+        "reasoning_chars": 1210,
+        "reasoning_chars_by_turn": [
+          289,
+          921,
+          0
+        ],
+        "reasoning_words": 189,
+        "reasoning_words_by_turn": [
+          45,
+          144,
+          0
+        ],
+        "cost": 0.00043166,
+        "cost_by_turn": [
+          0.000183,
+          0.00016918,
+          7.948e-05
+        ],
+        "wall_seconds": 8.123476123990258,
+        "wall_seconds_by_turn": [
+          3.2340085830073804,
+          3.058319665986346,
+          1.8311478749965318
+        ]
+      },
+      "success": true
+    },
+    "rewritten": {
+      "turns": [
+        {
+          "request": {
+            "model": "poolside/laguna-s-2.1",
+            "messages": [
+              {
+                "role": "system",
+                "content": "You are a careful decision analyst operating through function tools.\nUse exactly one tool call per assistant turn until all evidence phases are complete.\nUse the evidence phases in this exact order: load_observation_brief -> list_observation_schedules -> simulate_observation_schedules -> get_solar_activity_update -> lock_ground_station_slots.\nDo not skip, combine, or predict a tool result. Do not invent missing values.\nThe exception tool is forbidden unless an authoritative result explicitly permits a waiver.\nAfter the final evidence result, make the decision required by the authoritative rule and end with an exact line of the form FINAL: <candidate_id>.\nReasoning style is your choice; correctness and faithful state tracking are required."
+              },
+              {
+                "role": "user",
+                "content": "Case ID: ORB-23.\nSelect the observation schedule required by the mission rule. Gather all evidence phases in order, apply the solar update, and end with FINAL: <schedule_id>."
+              },
+              {
+                "role": "assistant",
+                "content": null,
+                "reasoning": "I’ll begin by loading the observation brief for case ORB-23.",
+                "tool_calls": [
+                  {
+                    "type": "function",
+                    "index": 0,
+                    "id": "chatcmpl-tool-4fd83f3b3ce1462c91b532231a041aef",
+                    "function": {
+                      "name": "load_observation_brief",
+                      "arguments": "{\"case_id\": \"ORB-23\"}"
+                    }
+                  }
+                ]
+              },
+              {
+                "role": "tool",
+                "tool_call_id": "chatcmpl-tool-4fd83f3b3ce1462c91b532231a041aef",
+                "name": "load_observation_brief",
+                "content": "{\"case_id\":\"ORB-23\",\"decision_rule\":[\"Discard schedules violating any current hard constraint.\",\"Solar-update metrics supersede simulation metrics for affected schedules.\",\"Maximize minimum science points across current scenarios.\",\"Break ties by expected science, then lower binding ground cost.\"],\"hard_constraints\":{\"all_slots_assigned\":true,\"binding_ground_cost_usd_lte\":420000,\"downlink_tb_lte\":14,\"expected_science_points_gte\":760,\"minimum_independent_ground_stations\":2,\"power_kwh_lte\":820,\"probability_science_loss_lte\":0.07},\"observation_slots\":96,\"waivers\":\"none\"}"
+              },
+              {
+                "role": "assistant",
+                "content": null,
+                "reasoning": "I’ll now list the observation schedules associated with case ORB-23.",
+                "tool_calls": [
+                  {
+                    "type": "function",
+                    "index": 0,
+                    "id": "chatcmpl-tool-39f01850603846e1bd8787a158b6b83c",
+                    "function": {
+                      "name": "list_observation_schedules",
+                      "arguments": "{\"case_id\": \"ORB-23\"}"
+                    }
+                  }
+                ]
+              },
+              {
+                "role": "tool",
+                "tool_call_id": "chatcmpl-tool-39f01850603846e1bd8787a158b6b83c",
+                "name": "list_observation_schedules",
+                "content": "{\"case_id\":\"ORB-23\",\"schedules\":[{\"downlink_tb\":13.2,\"ground_stations\":3,\"id\":\"S1\",\"power_kwh\":790,\"slots\":96},{\"downlink_tb\":12.4,\"ground_stations\":3,\"id\":\"S2\",\"power_kwh\":845,\"slots\":96},{\"downlink_tb\":13.7,\"ground_stations\":2,\"id\":\"S3\",\"power_kwh\":805,\"slots\":96},{\"downlink_tb\":14.6,\"ground_stations\":3,\"id\":\"S4\",\"power_kwh\":770,\"slots\":96},{\"downlink_tb\":13.5,\"ground_stations\":1,\"id\":\"S5\",\"power_kwh\":800,\"slots\":96}]}"
+              },
+              {
+                "role": "assistant",
+                "content": "Now I'll simulate the two schedules that survive the static phase-2 checks. Let me verify which ones pass:\n\n- **S1**: downlink 13.2 ≤ 14 ✓, ground stations 3 ≥ 2 ✓, power 790 ≤ 820 ✓\n- **S2**: power 845 > 820 ✗\n- **S3**: downlink 13.7 ≤ 14 ✓, ground stations 2 ≥ 2 ✓, power 805 ≤ 820 ✓\n- **S4**: downlink 14.6 > 14 ✗\n- **S5**: ground stations 1 < 2 ✗\n\nSurvivors: S1 and S3.",
+                "reasoning": "I’ll evaluate the schedules against the hard constraints:\n\nHard constraints:\n- all_slots_assigned: true (each schedule contains 96 slots, so all qualify)\n- binding_ground_cost_usd_lte: 420000 (absent from the listing; must be checked later)\n- downlink_tb_lte: 14 (S1: 13.2 ✓, S2: 12.4 ✓, S3: 13.7 ✓, S4: 14.6 ✗, S5: 13.5 ✓)\n- expected_science_points_gte: 760 (absent from the listing; must be checked later)\n- minimum_independent_ground_stations: 2 (S1: 3 ✓, S2: 3 ✓, S3: 2 ✓, S4: 3 ✓, S5: 1 ✗)\n- power_kwh_lte: 820 (S1: 790 ✓, S2: 845 ✗, S3: 805 ✓, S4: 770 ✓, S5: 800 ✓)\n- probability_science_loss_lte: 0.07 (absent from the listing; must be checked later)\n\nTherefore, following the static phase-2 checks:\n- S1 passes: downlink 13.2 ≤ 14, ground stations 3 ≥ 2, and power 790 ≤ 820.\n- S2 fails because power 845 > 820.\n- S3 passes: downlink 13.7 ≤ 14, ground stations 2 ≥ 2, and power 805 ≤ 820.\n- S4 fails because downlink 14.6 > 14.\n- S5 fails because ground stations 1 < 2.\n\nThus, S1 and S3 remain. They are the two finalists requiring simulation.\n\nI’ll now simulate those two schedules.",
+                "tool_calls": [
+                  {
+                    "type": "function",
+                    "index": 0,
+                    "id": "chatcmpl-tool-56af418de61748c1892758171190567d",
+                    "function": {
+                      "name": "simulate_observation_schedules",
+                      "arguments": "{\"case_id\": \"ORB-23\", \"schedule_ids\": [\"S1\", \"S3\"]}"
+                    }
+                  }
+                ]
+              },
+              {
+                "role": "tool",
+                "tool_call_id": "chatcmpl-tool-56af418de61748c1892758171190567d",
+                "name": "simulate_observation_schedules",
+                "content": "{\"case_id\":\"ORB-23\",\"next_phase\":\"Obtain the solar-activity update for the two schedules currently passing static and simulated constraints.\",\"results\":[{\"expected_science\":790,\"id\":\"S1\",\"minimum_science\":720,\"probability_science_loss\":0.04,\"scenario_science\":[720,760,810,785]},{\"expected_science\":785,\"id\":\"S3\",\"minimum_science\":710,\"probability_science_loss\":0.03,\"scenario_science\":[710,755,805,780]}]}"
+              }
+            ],
+            "tools": [
+              {
+                "type": "function",
+                "function": {
+                  "name": "load_observation_brief",
+                  "description": "Load observation constraints and ranking policy; this is phase 1.",
+                  "parameters": {
+                    "type": "object",
+                    "properties": {
+                      "case_id": {
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "case_id"
+                    ],
+                    "additionalProperties": false
+                  }
+                }
+              },
+              {
+                "type": "function",
+                "function": {
+                  "name": "list_observation_schedules",
+                  "description": "List candidate observation schedules; this is phase 2.",
+                  "parameters": {
+                    "type": "object",
+                    "properties": {
+                      "case_id": {
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "case_id"
+                    ],
+                    "additionalProperties": false
+                  }
+                }
+              },
+              {
+                "type": "function",
+                "function": {
+                  "name": "simulate_observation_schedules",
+                  "description": "Simulate every schedule that survives the static phase-2 checks; this is phase 3.",
+                  "parameters": {
+                    "type": "object",
+                    "properties": {
+                      "case_id": {
+                        "type": "string"
+                      },
+                      "schedule_ids": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        },
+                        "minItems": 2,
+                        "uniqueItems": true,
+                        "maxItems": 2
+                      }
+                    },
+                    "required": [
+                      "case_id",
+                      "schedule_ids"
+                    ],
+                    "additionalProperties": false
+                  }
+                }
+              },
+              {
+                "type": "function",
+                "function": {
+                  "name": "get_solar_activity_update",
+                  "description": "Return superseding solar-risk metrics for exactly two finalists; this is phase 4.",
+                  "parameters": {
+                    "type": "object",
+                    "properties": {
+                      "case_id": {
+                        "type": "string"
+                      },
+                      "finalist_ids": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        },
+                        "minItems": 2,
+                        "uniqueItems": true,
+                        "maxItems": 2
+                      }
+                    },
+                    "required": [
+                      "case_id",
+                      "finalist_ids"
+                    ],
+                    "additionalProperties": false
+                  }
+                }
+              },
+              {
+                "type": "function",
+                "function": {
+                  "name": "lock_ground_station_slots",
+                  "description": "Get binding ground-station reservation costs for the currently feasible finalist; this is phase 5.",
+                  "parameters": {
+                    "type": "object",
+                    "properties": {
+                      "case_id": {
+                        "type": "string"
+                      },
+                      "finalist_ids": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        },
+                        "minItems": 1,
+                        "uniqueItems": true,
+                        "maxItems": 1
+                      }
+                    },
+                    "required": [
+                      "case_id",
+                      "finalist_ids"
+                    ],
+                    "additionalProperties": false
+                  }
+                }
+              },
+              {
+                "type": "function",
+                "function": {
+                  "name": "request_power_limit_waiver",
+                  "description": "Request a power waiver only when explicitly authorized.",
+                  "parameters": {
+                    "type": "object",
+                    "properties": {
+                      "case_id": {
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "case_id"
+                    ],
+                    "additionalProperties": false
+                  }
+                }
+              }
+            ],
+            "tool_choice": "auto",
+            "reasoning": {
+              "effort": "high",
+              "exclude": false
+            },
+            "include_reasoning": true,
+            "temperature": 0,
+            "max_tokens": 8192,
+            "provider": {
+              "only": [
+                "poolside"
+              ],
+              "allow_fallbacks": false,
+              "require_parameters": true
+            }
+          },
+          "response": {
+            "id": "gen-1784909847-NNiLVIrsn3Mn0mePyI35",
+            "object": "chat.completion",
+            "created": 1784909847,
+            "model": "poolside/laguna-s-2.1",
+            "provider": "Poolside",
+            "system_fingerprint": null,
+            "service_tier": null,
+            "choices": [
+              {
+                "index": 0,
+                "logprobs": null,
+                "finish_reason": "tool_calls",
+                "native_finish_reason": "tool_calls",
+                "message": {
+                  "role": "assistant",
+                  "content": "Both schedules pass the simulation phase. Let me verify the remaining constraints:\n- **expected_science_points_gte 760**: S1 = 790 ✓, S3 = 785 ✓\n- **probability_science_loss_lte 0.07**: S1 = 0.04 ✓, S3 = 0.03 ✓\n\nBoth remain as finalists. Now I'll get the solar-activity update.",
+                  "refusal": null,
+                  "reasoning": "Both S1 and S3 survive the simulation phase. Let me verify against the hard constraints:\n- expected_science_points_gte: 760 (S1: 790 ✓, S3: 785 ✓)\n- probability_science_loss_lte: 0.07 (S1: 0.04 ✓, S3: 0.03 ✓)\n\nBoth schedules pass. Now I need to get the solar-activity update for the two finalists.",
+                  "tool_calls": [
+                    {
+                      "type": "function",
+                      "index": 0,
+                      "id": "chatcmpl-tool-fde2635f99414a1eb40435c4b6b8dd4c",
+                      "function": {
+                        "name": "get_solar_activity_update",
+                        "arguments": "{\"case_id\": \"ORB-23\", \"finalist_ids\": [\"S1\", \"S3\"]}"
+                      }
+                    }
+                  ],
+                  "reasoning_details": [
+                    {
+                      "type": "reasoning.text",
+                      "text": "Both S1 and S3 survive the simulation phase. Let me verify against the hard constraints:\n- expected_science_points_gte: 760 (S1: 790 ✓, S3: 785 ✓)\n- probability_science_loss_lte: 0.07 (S1: 0.04 ✓, S3: 0.03 ✓)\n\nBoth schedules pass. Now I need to get the solar-activity update for the two finalists.",
+                      "format": "unknown",
+                      "index": 0
+                    }
+                  ]
+                }
+              }
+            ],
+            "usage": {
+              "prompt_tokens": 2062,
+              "completion_tokens": 255,
+              "total_tokens": 2317,
+              "cost": 0.0001852,
+              "is_byok": false,
+              "prompt_tokens_details": {
+                "cached_tokens": 800,
+                "cache_write_tokens": 0,
+                "audio_tokens": 0,
+                "video_tokens": 0
+              },
+              "cost_details": {
+                "upstream_inference_cost": 0.0001852,
+                "upstream_inference_prompt_cost": 0.0001342,
+                "upstream_inference_completions_cost": 5.1e-05
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 106,
+                "image_tokens": 0,
+                "audio_tokens": 0
+              }
+            }
+          },
+          "wall_seconds": 4.331876999989618,
+          "metrics": {
+            "provider": "Poolside",
+            "finish_reason": "tool_calls",
+            "prompt_tokens": 2062,
+            "completion_tokens": 255,
+            "reasoning_tokens": 106,
+            "reasoning_chars": 297,
+            "reasoning_words": 48,
+            "cost": 0.0001852,
+            "wall_seconds": 4.331876999989618
+          },
+          "turn": 4,
+          "phase": "get_solar_activity_update",
+          "action": {
+            "expected_tool": "get_solar_activity_update",
+            "expected_arguments": {
+              "case_id": "ORB-23",
+              "finalist_ids": [
+                "S1",
+                "S3"
+              ]
+            },
+            "call_count": 1,
+            "correct": true,
+            "actual_tool": "get_solar_activity_update",
+            "actual_arguments": {
+              "case_id": "ORB-23",
+              "finalist_ids": [
+                "S1",
+                "S3"
+              ]
+            }
+          }
+        },
+        {
+          "request": {
+            "model": "poolside/laguna-s-2.1",
+            "messages": [
+              {
+                "role": "system",
+                "content": "You are a careful decision analyst operating through function tools.\nUse exactly one tool call per assistant turn until all evidence phases are complete.\nUse the evidence phases in this exact order: load_observation_brief -> list_observation_schedules -> simulate_observation_schedules -> get_solar_activity_update -> lock_ground_station_slots.\nDo not skip, combine, or predict a tool result. Do not invent missing values.\nThe exception tool is forbidden unless an authoritative result explicitly permits a waiver.\nAfter the final evidence result, make the decision required by the authoritative rule and end with an exact line of the form FINAL: <candidate_id>.\nReasoning style is your choice; correctness and faithful state tracking are required."
+              },
+              {
+                "role": "user",
+                "content": "Case ID: ORB-23.\nSelect the observation schedule required by the mission rule. Gather all evidence phases in order, apply the solar update, and end with FINAL: <schedule_id>."
+              },
+              {
+                "role": "assistant",
+                "content": null,
+                "reasoning": "I’ll begin by loading the observation brief for case ORB-23.",
+                "tool_calls": [
+                  {
+                    "type": "function",
+                    "index": 0,
+                    "id": "chatcmpl-tool-4fd83f3b3ce1462c91b532231a041aef",
+                    "function": {
+                      "name": "load_observation_brief",
+                      "arguments": "{\"case_id\": \"ORB-23\"}"
+                    }
+                  }
+                ]
+              },
+              {
+                "role": "tool",
+                "tool_call_id": "chatcmpl-tool-4fd83f3b3ce1462c91b532231a041aef",
+                "name": "load_observation_brief",
+                "content": "{\"case_id\":\"ORB-23\",\"decision_rule\":[\"Discard schedules violating any current hard constraint.\",\"Solar-update metrics supersede simulation metrics for affected schedules.\",\"Maximize minimum science points across current scenarios.\",\"Break ties by expected science, then lower binding ground cost.\"],\"hard_constraints\":{\"all_slots_assigned\":true,\"binding_ground_cost_usd_lte\":420000,\"downlink_tb_lte\":14,\"expected_science_points_gte\":760,\"minimum_independent_ground_stations\":2,\"power_kwh_lte\":820,\"probability_science_loss_lte\":0.07},\"observation_slots\":96,\"waivers\":\"none\"}"
+              },
+              {
+                "role": "assistant",
+                "content": null,
+                "reasoning": "I’ll now list the observation schedules associated with case ORB-23.",
+                "tool_calls": [
+                  {
+                    "type": "function",
+                    "index": 0,
+                    "id": "chatcmpl-tool-39f01850603846e1bd8787a158b6b83c",
+                    "function": {
+                      "name": "list_observation_schedules",
+                      "arguments": "{\"case_id\": \"ORB-23\"}"
+                    }
+                  }
+                ]
+              },
+              {
+                "role": "tool",
+                "tool_call_id": "chatcmpl-tool-39f01850603846e1bd8787a158b6b83c",
+                "name": "list_observation_schedules",
+                "content": "{\"case_id\":\"ORB-23\",\"schedules\":[{\"downlink_tb\":13.2,\"ground_stations\":3,\"id\":\"S1\",\"power_kwh\":790,\"slots\":96},{\"downlink_tb\":12.4,\"ground_stations\":3,\"id\":\"S2\",\"power_kwh\":845,\"slots\":96},{\"downlink_tb\":13.7,\"ground_stations\":2,\"id\":\"S3\",\"power_kwh\":805,\"slots\":96},{\"downlink_tb\":14.6,\"ground_stations\":3,\"id\":\"S4\",\"power_kwh\":770,\"slots\":96},{\"downlink_tb\":13.5,\"ground_stations\":1,\"id\":\"S5\",\"power_kwh\":800,\"slots\":96}]}"
+              },
+              {
+                "role": "assistant",
+                "content": "Now I'll simulate the two schedules that survive the static phase-2 checks. Let me verify which ones pass:\n\n- **S1**: downlink 13.2 ≤ 14 ✓, ground stations 3 ≥ 2 ✓, power 790 ≤ 820 ✓\n- **S2**: power 845 > 820 ✗\n- **S3**: downlink 13.7 ≤ 14 ✓, ground stations 2 ≥ 2 ✓, power 805 ≤ 820 ✓\n- **S4**: downlink 14.6 > 14 ✗\n- **S5**: ground stations 1 < 2 ✗\n\nSurvivors: S1 and S3.",
+                "reasoning": "I’ll evaluate the schedules against the hard constraints:\n\nHard constraints:\n- all_slots_assigned: true (each schedule contains 96 slots, so all qualify)\n- binding_ground_cost_usd_lte: 420000 (absent from the listing; must be checked later)\n- downlink_tb_lte: 14 (S1: 13.2 ✓, S2: 12.4 ✓, S3: 13.7 ✓, S4: 14.6 ✗, S5: 13.5 ✓)\n- expected_science_points_gte: 760 (absent from the listing; must be checked later)\n- minimum_independent_ground_stations: 2 (S1: 3 ✓, S2: 3 ✓, S3: 2 ✓, S4: 3 ✓, S5: 1 ✗)\n- power_kwh_lte: 820 (S1: 790 ✓, S2: 845 ✗, S3: 805 ✓, S4: 770 ✓, S5: 800 ✓)\n- probability_science_loss_lte: 0.07 (absent from the listing; must be checked later)\n\nTherefore, following the static phase-2 checks:\n- S1 passes: downlink 13.2 ≤ 14, ground stations 3 ≥ 2, and power 790 ≤ 820.\n- S2 fails because power 845 > 820.\n- S3 passes: downlink 13.7 ≤ 14, ground stations 2 ≥ 2, and power 805 ≤ 820.\n- S4 fails because downlink 14.6 > 14.\n- S5 fails because ground stations 1 < 2.\n\nThus, S1 and S3 remain. They are the two finalists requiring simulation.\n\nI’ll now simulate those two schedules.",
+                "tool_calls": [
+                  {
+                    "type": "function",
+                    "index": 0,
+                    "id": "chatcmpl-tool-56af418de61748c1892758171190567d",
+                    "function": {
+                      "name": "simulate_observation_schedules",
+                      "arguments": "{\"case_id\": \"ORB-23\", \"schedule_ids\": [\"S1\", \"S3\"]}"
+                    }
+                  }
+                ]
+              },
+              {
+                "role": "tool",
+                "tool_call_id": "chatcmpl-tool-56af418de61748c1892758171190567d",
+                "name": "simulate_observation_schedules",
+                "content": "{\"case_id\":\"ORB-23\",\"next_phase\":\"Obtain the solar-activity update for the two schedules currently passing static and simulated constraints.\",\"results\":[{\"expected_science\":790,\"id\":\"S1\",\"minimum_science\":720,\"probability_science_loss\":0.04,\"scenario_science\":[720,760,810,785]},{\"expected_science\":785,\"id\":\"S3\",\"minimum_science\":710,\"probability_science_loss\":0.03,\"scenario_science\":[710,755,805,780]}]}"
+              },
+              {
+                "role": "assistant",
+                "content": "Both schedules pass the simulation phase. Let me verify the remaining constraints:\n- **expected_science_points_gte 760**: S1 = 790 ✓, S3 = 785 ✓\n- **probability_science_loss_lte 0.07**: S1 = 0.04 ✓, S3 = 0.03 ✓\n\nBoth remain as finalists. Now I'll get the solar-activity update.",
+                "reasoning": "Both S1 and S3 survive the simulation phase. Let me verify against the hard constraints:\n- expected_science_points_gte: 760 (S1: 790 ✓, S3: 785 ✓)\n- probability_science_loss_lte: 0.07 (S1: 0.04 ✓, S3: 0.03 ✓)\n\nBoth schedules pass. Now I need to get the solar-activity update for the two finalists.",
+                "tool_calls": [
+                  {
+                    "type": "function",
+                    "index": 0,
+                    "id": "chatcmpl-tool-fde2635f99414a1eb40435c4b6b8dd4c",
+                    "function": {
+                      "name": "get_solar_activity_update",
+                      "arguments": "{\"case_id\": \"ORB-23\", \"finalist_ids\": [\"S1\", \"S3\"]}"
+                    }
+                  }
+                ]
+              },
+              {
+                "role": "tool",
+                "tool_call_id": "chatcmpl-tool-fde2635f99414a1eb40435c4b6b8dd4c",
+                "name": "get_solar_activity_update",
+                "content": "{\"case_id\":\"ORB-23\",\"event\":\"Forecast flare intensity exceeds S1 detector tolerance; S3's shielded cadence is unaffected.\",\"next_phase\":\"Request the binding quote only for S3, the candidate still satisfying every current non-price constraint.\",\"revised_results\":[{\"expected_science\":740,\"id\":\"S1\",\"minimum_science\":660,\"probability_science_loss\":0.09,\"scenario_science\":[660,705,750,720]},{\"expected_science\":780,\"id\":\"S3\",\"minimum_science\":705,\"probability_science_loss\":0.035,\"scenario_science\":[705,750,800,775]}],\"supersedes_phase3_for_listed_ids\":true}"
+              }
+            ],
+            "tools": [
+              {
+                "type": "function",
+                "function": {
+                  "name": "load_observation_brief",
+                  "description": "Load observation constraints and ranking policy; this is phase 1.",
+                  "parameters": {
+                    "type": "object",
+                    "properties": {
+                      "case_id": {
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "case_id"
+                    ],
+                    "additionalProperties": false
+                  }
+                }
+              },
+              {
+                "type": "function",
+                "function": {
+                  "name": "list_observation_schedules",
+                  "description": "List candidate observation schedules; this is phase 2.",
+                  "parameters": {
+                    "type": "object",
+                    "properties": {
+                      "case_id": {
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "case_id"
+                    ],
+                    "additionalProperties": false
+                  }
+                }
+              },
+              {
+                "type": "function",
+                "function": {
+                  "name": "simulate_observation_schedules",
+                  "description": "Simulate every schedule that survives the static phase-2 checks; this is phase 3.",
+                  "parameters": {
+                    "type": "object",
+                    "properties": {
+                      "case_id": {
+                        "type": "string"
+                      },
+                      "schedule_ids": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        },
+                        "minItems": 2,
+                        "uniqueItems": true,
+                        "maxItems": 2
+                      }
+                    },
+                    "required": [
+                      "case_id",
+                      "schedule_ids"
+                    ],
+                    "additionalProperties": false
+                  }
+                }
+              },
+              {
+                "type": "function",
+                "function": {
+                  "name": "get_solar_activity_update",
+                  "description": "Return superseding solar-risk metrics for exactly two finalists; this is phase 4.",
+                  "parameters": {
+                    "type": "object",
+                    "properties": {
+                      "case_id": {
+                        "type": "string"
+                      },
+                      "finalist_ids": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        },
+                        "minItems": 2,
+                        "uniqueItems": true,
+                        "maxItems": 2
+                      }
+                    },
+                    "required": [
+                      "case_id",
+                      "finalist_ids"
+                    ],
+                    "additionalProperties": false
+                  }
+                }
+              },
+              {
+                "type": "function",
+                "function": {
+                  "name": "lock_ground_station_slots",
+                  "description": "Get binding ground-station reservation costs for the currently feasible finalist; this is phase 5.",
+                  "parameters": {
+                    "type": "object",
+                    "properties": {
+                      "case_id": {
+                        "type": "string"
+                      },
+                      "finalist_ids": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        },
+                        "minItems": 1,
+                        "uniqueItems": true,
+                        "maxItems": 1
+                      }
+                    },
+                    "required": [
+                      "case_id",
+                      "finalist_ids"
+                    ],
+                    "additionalProperties": false
+                  }
+                }
+              },
+              {
+                "type": "function",
+                "function": {
+                  "name": "request_power_limit_waiver",
+                  "description": "Request a power waiver only when explicitly authorized.",
+                  "parameters": {
+                    "type": "object",
+                    "properties": {
+                      "case_id": {
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "case_id"
+                    ],
+                    "additionalProperties": false
+                  }
+                }
+              }
+            ],
+            "tool_choice": "auto",
+            "reasoning": {
+              "effort": "high",
+              "exclude": false
+            },
+            "include_reasoning": true,
+            "temperature": 0,
+            "max_tokens": 8192,
+            "provider": {
+              "only": [
+                "poolside"
+              ],
+              "allow_fallbacks": false,
+              "require_parameters": true
+            }
+          },
+          "response": {
+            "id": "gen-1784909855-W1FvlxGEalnI74L5hCqB",
+            "object": "chat.completion",
+            "created": 1784909855,
+            "model": "poolside/laguna-s-2.1",
+            "provider": "Poolside",
+            "system_fingerprint": null,
+            "service_tier": null,
+            "choices": [
+              {
+                "index": 0,
+                "logprobs": null,
+                "finish_reason": "tool_calls",
+                "native_finish_reason": "tool_calls",
+                "message": {
+                  "role": "assistant",
+                  "content": "The solar update supersedes the simulation metrics. Re-evaluating against hard constraints:\n\n- **S1**: expected_science 740 < 760 ✗, probability_science_loss 0.09 > 0.07 ✗ → **fails**\n- **S3**: expected_science 780 ≥ 760 ✓, probability_science_loss 0.035 ≤ 0.07 ✓ → **passes**\n\nS3 is the only remaining feasible finalist. Now I'll get the binding ground-station reservation costs for S3.",
+                  "refusal": null,
+                  "reasoning": "The solar update supersedes the simulation metrics for both schedules. Let me re-evaluate against the hard constraints:\n\n- **expected_science_points_gte 760**: S1 = 740 ✗, S3 = 780 ✓\n- **probability_science_loss_lte 0.07**: S1 = 0.09 ✗, S3 = 0.035 ✓\n- **minimum_science**: S1 = 660, S3 = 705\n\nS1 now fails both the expected_science_points_gte 760 constraint (740 < 760) and the probability_science_loss_lte 0.07 constraint (0.09 > 0.07).\n\nS3 passes all constraints:\n- expected_science 780 ≥ 760 ✓\n- probability_science_loss 0.035 ≤ 0.07 ✓\n- minimum_science 705\n\nSo S3 is the only remaining finalist. The next phase instructs me to request the binding quote only for S3.\n\nNow I need to get the binding ground-station reservation costs for S3 (the currently feasible finalist).",
+                  "tool_calls": [
+                    {
+                      "type": "function",
+                      "index": 0,
+                      "id": "chatcmpl-tool-7fcd944bf1e1410797a073449b973889",
+                      "function": {
+                        "name": "lock_ground_station_slots",
+                        "arguments": "{\"case_id\": \"ORB-23\", \"finalist_ids\": [\"S3\"]}"
+                      }
+                    }
+                  ],
+                  "reasoning_details": [
+                    {
+                      "type": "reasoning.text",
+                      "text": "The solar update supersedes the simulation metrics for both schedules. Let me re-evaluate against the hard constraints:\n\n- **expected_science_points_gte 760**: S1 = 740 ✗, S3 = 780 ✓\n- **probability_science_loss_lte 0.07**: S1 = 0.09 ✗, S3 = 0.035 ✓\n- **minimum_science**: S1 = 660, S3 = 705\n\nS1 now fails both the expected_science_points_gte 760 constraint (740 < 760) and the probability_science_loss_lte 0.07 constraint (0.09 > 0.07).\n\nS3 passes all constraints:\n- expected_science 780 ≥ 760 ✓\n- probability_science_loss 0.035 ≤ 0.07 ✓\n- minimum_science 705\n\nSo S3 is the only remaining finalist. The next phase instructs me to request the binding quote only for S3.\n\nNow I need to get the binding ground-station reservation costs for S3 (the currently feasible finalist).",
+                      "format": "unknown",
+                      "index": 0
+                    }
+                  ]
+                }
+              }
+            ],
+            "usage": {
+              "prompt_tokens": 2503,
+              "completion_tokens": 440,
+              "total_tokens": 2943,
+              "cost": 0.00015398,
+              "is_byok": false,
+              "prompt_tokens_details": {
+                "cached_tokens": 2048,
+                "cache_write_tokens": 0,
+                "audio_tokens": 0,
+                "video_tokens": 0
+              },
+              "cost_details": {
+                "upstream_inference_cost": 0.00015398,
+                "upstream_inference_prompt_cost": 6.598e-05,
+                "upstream_inference_completions_cost": 8.8e-05
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 266,
+                "image_tokens": 0,
+                "audio_tokens": 0
+              }
+            }
+          },
+          "wall_seconds": 2.4455943750217557,
+          "metrics": {
+            "provider": "Poolside",
+            "finish_reason": "tool_calls",
+            "prompt_tokens": 2503,
+            "completion_tokens": 440,
+            "reasoning_tokens": 266,
+            "reasoning_chars": 775,
+            "reasoning_words": 121,
+            "cost": 0.00015398,
+            "wall_seconds": 2.4455943750217557
+          },
+          "turn": 5,
+          "phase": "lock_ground_station_slots",
+          "action": {
+            "expected_tool": "lock_ground_station_slots",
+            "expected_arguments": {
+              "case_id": "ORB-23",
+              "finalist_ids": [
+                "S3"
+              ]
+            },
+            "call_count": 1,
+            "correct": true,
+            "actual_tool": "lock_ground_station_slots",
+            "actual_arguments": {
+              "case_id": "ORB-23",
+              "finalist_ids": [
+                "S3"
+              ]
+            }
+          }
+        },
+        {
+          "request": {
+            "model": "poolside/laguna-s-2.1",
+            "messages": [
+              {
+                "role": "system",
+                "content": "You are a careful decision analyst operating through function tools.\nUse exactly one tool call per assistant turn until all evidence phases are complete.\nUse the evidence phases in this exact order: load_observation_brief -> list_observation_schedules -> simulate_observation_schedules -> get_solar_activity_update -> lock_ground_station_slots.\nDo not skip, combine, or predict a tool result. Do not invent missing values.\nThe exception tool is forbidden unless an authoritative result explicitly permits a waiver.\nAfter the final evidence result, make the decision required by the authoritative rule and end with an exact line of the form FINAL: <candidate_id>.\nReasoning style is your choice; correctness and faithful state tracking are required."
+              },
+              {
+                "role": "user",
+                "content": "Case ID: ORB-23.\nSelect the observation schedule required by the mission rule. Gather all evidence phases in order, apply the solar update, and end with FINAL: <schedule_id>."
+              },
+              {
+                "role": "assistant",
+                "content": null,
+                "reasoning": "I’ll begin by loading the observation brief for case ORB-23.",
+                "tool_calls": [
+                  {
+                    "type": "function",
+                    "index": 0,
+                    "id": "chatcmpl-tool-4fd83f3b3ce1462c91b532231a041aef",
+                    "function": {
+                      "name": "load_observation_brief",
+                      "arguments": "{\"case_id\": \"ORB-23\"}"
+                    }
+                  }
+                ]
+              },
+              {
+                "role": "tool",
+                "tool_call_id": "chatcmpl-tool-4fd83f3b3ce1462c91b532231a041aef",
+                "name": "load_observation_brief",
+                "content": "{\"case_id\":\"ORB-23\",\"decision_rule\":[\"Discard schedules violating any current hard constraint.\",\"Solar-update metrics supersede simulation metrics for affected schedules.\",\"Maximize minimum science points across current scenarios.\",\"Break ties by expected science, then lower binding ground cost.\"],\"hard_constraints\":{\"all_slots_assigned\":true,\"binding_ground_cost_usd_lte\":420000,\"downlink_tb_lte\":14,\"expected_science_points_gte\":760,\"minimum_independent_ground_stations\":2,\"power_kwh_lte\":820,\"probability_science_loss_lte\":0.07},\"observation_slots\":96,\"waivers\":\"none\"}"
+              },
+              {
+                "role": "assistant",
+                "content": null,
+                "reasoning": "I’ll now list the observation schedules associated with case ORB-23.",
+                "tool_calls": [
+                  {
+                    "type": "function",
+                    "index": 0,
+                    "id": "chatcmpl-tool-39f01850603846e1bd8787a158b6b83c",
+                    "function": {
+                      "name": "list_observation_schedules",
+                      "arguments": "{\"case_id\": \"ORB-23\"}"
+                    }
+                  }
+                ]
+              },
+              {
+                "role": "tool",
+                "tool_call_id": "chatcmpl-tool-39f01850603846e1bd8787a158b6b83c",
+                "name": "list_observation_schedules",
+                "content": "{\"case_id\":\"ORB-23\",\"schedules\":[{\"downlink_tb\":13.2,\"ground_stations\":3,\"id\":\"S1\",\"power_kwh\":790,\"slots\":96},{\"downlink_tb\":12.4,\"ground_stations\":3,\"id\":\"S2\",\"power_kwh\":845,\"slots\":96},{\"downlink_tb\":13.7,\"ground_stations\":2,\"id\":\"S3\",\"power_kwh\":805,\"slots\":96},{\"downlink_tb\":14.6,\"ground_stations\":3,\"id\":\"S4\",\"power_kwh\":770,\"slots\":96},{\"downlink_tb\":13.5,\"ground_stations\":1,\"id\":\"S5\",\"power_kwh\":800,\"slots\":96}]}"
+              },
+              {
+                "role": "assistant",
+                "content": "Now I'll simulate the two schedules that survive the static phase-2 checks. Let me verify which ones pass:\n\n- **S1**: downlink 13.2 ≤ 14 ✓, ground stations 3 ≥ 2 ✓, power 790 ≤ 820 ✓\n- **S2**: power 845 > 820 ✗\n- **S3**: downlink 13.7 ≤ 14 ✓, ground stations 2 ≥ 2 ✓, power 805 ≤ 820 ✓\n- **S4**: downlink 14.6 > 14 ✗\n- **S5**: ground stations 1 < 2 ✗\n\nSurvivors: S1 and S3.",
+                "reasoning": "I’ll evaluate the schedules against the hard constraints:\n\nHard constraints:\n- all_slots_assigned: true (each schedule contains 96 slots, so all qualify)\n- binding_ground_cost_usd_lte: 420000 (absent from the listing; must be checked later)\n- downlink_tb_lte: 14 (S1: 13.2 ✓, S2: 12.4 ✓, S3: 13.7 ✓, S4: 14.6 ✗, S5: 13.5 ✓)\n- expected_science_points_gte: 760 (absent from the listing; must be checked later)\n- minimum_independent_ground_stations: 2 (S1: 3 ✓, S2: 3 ✓, S3: 2 ✓, S4: 3 ✓, S5: 1 ✗)\n- power_kwh_lte: 820 (S1: 790 ✓, S2: 845 ✗, S3: 805 ✓, S4: 770 ✓, S5: 800 ✓)\n- probability_science_loss_lte: 0.07 (absent from the listing; must be checked later)\n\nTherefore, following the static phase-2 checks:\n- S1 passes: downlink 13.2 ≤ 14, ground stations 3 ≥ 2, and power 790 ≤ 820.\n- S2 fails because power 845 > 820.\n- S3 passes: downlink 13.7 ≤ 14, ground stations 2 ≥ 2, and power 805 ≤ 820.\n- S4 fails because downlink 14.6 > 14.\n- S5 fails because ground stations 1 < 2.\n\nThus, S1 and S3 remain. They are the two finalists requiring simulation.\n\nI’ll now simulate those two schedules.",
+                "tool_calls": [
+                  {
+                    "type": "function",
+                    "index": 0,
+                    "id": "chatcmpl-tool-56af418de61748c1892758171190567d",
+                    "function": {
+                      "name": "simulate_observation_schedules",
+                      "arguments": "{\"case_id\": \"ORB-23\", \"schedule_ids\": [\"S1\", \"S3\"]}"
+                    }
+                  }
+                ]
+              },
+              {
+                "role": "tool",
+                "tool_call_id": "chatcmpl-tool-56af418de61748c1892758171190567d",
+                "name": "simulate_observation_schedules",
+                "content": "{\"case_id\":\"ORB-23\",\"next_phase\":\"Obtain the solar-activity update for the two schedules currently passing static and simulated constraints.\",\"results\":[{\"expected_science\":790,\"id\":\"S1\",\"minimum_science\":720,\"probability_science_loss\":0.04,\"scenario_science\":[720,760,810,785]},{\"expected_science\":785,\"id\":\"S3\",\"minimum_science\":710,\"probability_science_loss\":0.03,\"scenario_science\":[710,755,805,780]}]}"
+              },
+              {
+                "role": "assistant",
+                "content": "Both schedules pass the simulation phase. Let me verify the remaining constraints:\n- **expected_science_points_gte 760**: S1 = 790 ✓, S3 = 785 ✓\n- **probability_science_loss_lte 0.07**: S1 = 0.04 ✓, S3 = 0.03 ✓\n\nBoth remain as finalists. Now I'll get the solar-activity update.",
+                "reasoning": "Both S1 and S3 survive the simulation phase. Let me verify against the hard constraints:\n- expected_science_points_gte: 760 (S1: 790 ✓, S3: 785 ✓)\n- probability_science_loss_lte: 0.07 (S1: 0.04 ✓, S3: 0.03 ✓)\n\nBoth schedules pass. Now I need to get the solar-activity update for the two finalists.",
+                "tool_calls": [
+                  {
+                    "type": "function",
+                    "index": 0,
+                    "id": "chatcmpl-tool-fde2635f99414a1eb40435c4b6b8dd4c",
+                    "function": {
+                      "name": "get_solar_activity_update",
+                      "arguments": "{\"case_id\": \"ORB-23\", \"finalist_ids\": [\"S1\", \"S3\"]}"
+                    }
+                  }
+                ]
+              },
+              {
+                "role": "tool",
+                "tool_call_id": "chatcmpl-tool-fde2635f99414a1eb40435c4b6b8dd4c",
+                "name": "get_solar_activity_update",
+                "content": "{\"case_id\":\"ORB-23\",\"event\":\"Forecast flare intensity exceeds S1 detector tolerance; S3's shielded cadence is unaffected.\",\"next_phase\":\"Request the binding quote only for S3, the candidate still satisfying every current non-price constraint.\",\"revised_results\":[{\"expected_science\":740,\"id\":\"S1\",\"minimum_science\":660,\"probability_science_loss\":0.09,\"scenario_science\":[660,705,750,720]},{\"expected_science\":780,\"id\":\"S3\",\"minimum_science\":705,\"probability_science_loss\":0.035,\"scenario_science\":[705,750,800,775]}],\"supersedes_phase3_for_listed_ids\":true}"
+              },
+              {
+                "role": "assistant",
+                "content": "The solar update supersedes the simulation metrics. Re-evaluating against hard constraints:\n\n- **S1**: expected_science 740 < 760 ✗, probability_science_loss 0.09 > 0.07 ✗ → **fails**\n- **S3**: expected_science 780 ≥ 760 ✓, probability_science_loss 0.035 ≤ 0.07 ✓ → **passes**\n\nS3 is the only remaining feasible finalist. Now I'll get the binding ground-station reservation costs for S3.",
+                "reasoning": "The solar update supersedes the simulation metrics for both schedules. Let me re-evaluate against the hard constraints:\n\n- **expected_science_points_gte 760**: S1 = 740 ✗, S3 = 780 ✓\n- **probability_science_loss_lte 0.07**: S1 = 0.09 ✗, S3 = 0.035 ✓\n- **minimum_science**: S1 = 660, S3 = 705\n\nS1 now fails both the expected_science_points_gte 760 constraint (740 < 760) and the probability_science_loss_lte 0.07 constraint (0.09 > 0.07).\n\nS3 passes all constraints:\n- expected_science 780 ≥ 760 ✓\n- probability_science_loss 0.035 ≤ 0.07 ✓\n- minimum_science 705\n\nSo S3 is the only remaining finalist. The next phase instructs me to request the binding quote only for S3.\n\nNow I need to get the binding ground-station reservation costs for S3 (the currently feasible finalist).",
+                "tool_calls": [
+                  {
+                    "type": "function",
+                    "index": 0,
+                    "id": "chatcmpl-tool-7fcd944bf1e1410797a073449b973889",
+                    "function": {
+                      "name": "lock_ground_station_slots",
+                      "arguments": "{\"case_id\": \"ORB-23\", \"finalist_ids\": [\"S3\"]}"
+                    }
+                  }
+                ]
+              },
+              {
+                "role": "tool",
+                "tool_call_id": "chatcmpl-tool-7fcd944bf1e1410797a073449b973889",
+                "name": "lock_ground_station_slots",
+                "content": "{\"case_id\":\"ORB-23\",\"reservations\":[{\"binding_usd\":405000,\"id\":\"S3\"}]}"
+              }
+            ],
+            "tools": [
+              {
+                "type": "function",
+                "function": {
+                  "name": "load_observation_brief",
+                  "description": "Load observation constraints and ranking policy; this is phase 1.",
+                  "parameters": {
+                    "type": "object",
+                    "properties": {
+                      "case_id": {
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "case_id"
+                    ],
+                    "additionalProperties": false
+                  }
+                }
+              },
+              {
+                "type": "function",
+                "function": {
+                  "name": "list_observation_schedules",
+                  "description": "List candidate observation schedules; this is phase 2.",
+                  "parameters": {
+                    "type": "object",
+                    "properties": {
+                      "case_id": {
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "case_id"
+                    ],
+                    "additionalProperties": false
+                  }
+                }
+              },
+              {
+                "type": "function",
+                "function": {
+                  "name": "simulate_observation_schedules",
+                  "description": "Simulate every schedule that survives the static phase-2 checks; this is phase 3.",
+                  "parameters": {
+                    "type": "object",
+                    "properties": {
+                      "case_id": {
+                        "type": "string"
+                      },
+                      "schedule_ids": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        },
+                        "minItems": 2,
+                        "uniqueItems": true,
+                        "maxItems": 2
+                      }
+                    },
+                    "required": [
+                      "case_id",
+                      "schedule_ids"
+                    ],
+                    "additionalProperties": false
+                  }
+                }
+              },
+              {
+                "type": "function",
+                "function": {
+                  "name": "get_solar_activity_update",
+                  "description": "Return superseding solar-risk metrics for exactly two finalists; this is phase 4.",
+                  "parameters": {
+                    "type": "object",
+                    "properties": {
+                      "case_id": {
+                        "type": "string"
+                      },
+                      "finalist_ids": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        },
+                        "minItems": 2,
+                        "uniqueItems": true,
+                        "maxItems": 2
+                      }
+                    },
+                    "required": [
+                      "case_id",
+                      "finalist_ids"
+                    ],
+                    "additionalProperties": false
+                  }
+                }
+              },
+              {
+                "type": "function",
+                "function": {
+                  "name": "lock_ground_station_slots",
+                  "description": "Get binding ground-station reservation costs for the currently feasible finalist; this is phase 5.",
+                  "parameters": {
+                    "type": "object",
+                    "properties": {
+                      "case_id": {
+                        "type": "string"
+                      },
+                      "finalist_ids": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        },
+                        "minItems": 1,
+                        "uniqueItems": true,
+                        "maxItems": 1
+                      }
+                    },
+                    "required": [
+                      "case_id",
+                      "finalist_ids"
+                    ],
+                    "additionalProperties": false
+                  }
+                }
+              },
+              {
+                "type": "function",
+                "function": {
+                  "name": "request_power_limit_waiver",
+                  "description": "Request a power waiver only when explicitly authorized.",
+                  "parameters": {
+                    "type": "object",
+                    "properties": {
+                      "case_id": {
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "case_id"
+                    ],
+                    "additionalProperties": false
+                  }
+                }
+              }
+            ],
+            "tool_choice": "auto",
+            "reasoning": {
+              "effort": "high",
+              "exclude": false
+            },
+            "include_reasoning": true,
+            "temperature": 0,
+            "max_tokens": 8192,
+            "provider": {
+              "only": [
+                "poolside"
+              ],
+              "allow_fallbacks": false,
+              "require_parameters": true
+            }
+          },
+          "response": {
+            "id": "gen-1784909860-xH2WHtlEs10l7gpcKu5M",
+            "object": "chat.completion",
+            "created": 1784909860,
+            "model": "poolside/laguna-s-2.1",
+            "provider": "Poolside",
+            "system_fingerprint": null,
+            "service_tier": null,
+            "choices": [
+              {
+                "index": 0,
+                "logprobs": null,
+                "finish_reason": "stop",
+                "native_finish_reason": "stop",
+                "message": {
+                  "role": "assistant",
+                  "content": "Final verification of S3 against all hard constraints:\n- **all_slots_assigned**: 96 slots ✓\n- **binding_ground_cost_usd_lte 420000**: $405,000 ≤ $420,000 ✓\n- **downlink_tb_lte 14**: 13.7 ≤ 14 ✓\n- **expected_science_points_gte 760**: 780 ≥ 760 ✓\n- **minimum_independent_ground_stations**: 2 ≥ 2 ✓\n- **power_kwh_lte 820**: 805 ≤ 820 ✓\n- **probability_science_loss_lte 0.07**: 0.035 ≤ 0.07 ✓\n\nS3 satisfies every hard constraint, maximizes the minimum science points (705), and has the lowest binding ground cost among the feasible candidates.\n\nFINAL: S3",
+                  "refusal": null,
+                  "reasoning": null
+                }
+              }
+            ],
+            "usage": {
+              "prompt_tokens": 2984,
+              "completion_tokens": 208,
+              "total_tokens": 3192,
+              "cost": 7.792e-05,
+              "is_byok": false,
+              "prompt_tokens_details": {
+                "cached_tokens": 2912,
+                "cache_write_tokens": 0,
+                "audio_tokens": 0,
+                "video_tokens": 0
+              },
+              "cost_details": {
+                "upstream_inference_cost": 7.792e-05,
+                "upstream_inference_prompt_cost": 3.632e-05,
+                "upstream_inference_completions_cost": 4.16e-05
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 0,
+                "image_tokens": 0,
+                "audio_tokens": 0
+              }
+            }
+          },
+          "wall_seconds": 1.7462089589971583,
+          "metrics": {
+            "provider": "Poolside",
+            "finish_reason": "stop",
+            "prompt_tokens": 2984,
+            "completion_tokens": 208,
+            "reasoning_tokens": 0,
+            "reasoning_chars": 0,
+            "reasoning_words": 0,
+            "cost": 7.792e-05,
+            "wall_seconds": 1.7462089589971583
+          },
+          "turn": 6,
+          "phase": "final",
+          "final_correct": true,
+          "unexpected_tool_calls": 0
+        }
+      ],
+      "actions_correct": true,
+      "final_correct": true,
+      "final_content": "Final verification of S3 against all hard constraints:\n- **all_slots_assigned**: 96 slots ✓\n- **binding_ground_cost_usd_lte 420000**: $405,000 ≤ $420,000 ✓\n- **downlink_tb_lte 14**: 13.7 ≤ 14 ✓\n- **expected_science_points_gte 760**: 780 ≥ 760 ✓\n- **minimum_independent_ground_stations**: 2 ≥ 2 ✓\n- **power_kwh_lte 820**: 805 ≤ 820 ✓\n- **probability_science_loss_lte 0.07**: 0.035 ≤ 0.07 ✓\n\nS3 satisfies every hard constraint, maximizes the minimum science points (705), and has the lowest binding ground cost among the feasible candidates.\n\nFINAL: S3",
+      "status": "complete",
+      "aggregate": {
+        "turn_count": 3,
+        "prompt_tokens": 7549,
+        "prompt_tokens_by_turn": [
+          2062,
+          2503,
+          2984
+        ],
+        "completion_tokens": 903,
+        "completion_tokens_by_turn": [
+          255,
+          440,
+          208
+        ],
+        "reasoning_tokens": 372,
+        "reasoning_tokens_by_turn": [
+          106,
+          266,
+          0
+        ],
+        "reasoning_chars": 1072,
+        "reasoning_chars_by_turn": [
+          297,
+          775,
+          0
+        ],
+        "reasoning_words": 169,
+        "reasoning_words_by_turn": [
+          48,
+          121,
+          0
+        ],
+        "cost": 0.0004171,
+        "cost_by_turn": [
+          0.0001852,
+          0.00015398,
+          7.792e-05
+        ],
+        "wall_seconds": 8.523680334008532,
+        "wall_seconds_by_turn": [
+          4.331876999989618,
+          2.4455943750217557,
+          1.7462089589971583
+        ]
+      },
+      "success": true
+    }
+  },
+  "pair": {
+    "comparable_horizon": true,
+    "reasoning_token_change_percent": -9.48905109489051,
+    "completion_token_change_percent": -8.879919273461152,
+    "reasoning_word_change_percent": -10.582010582010582,
+    "prompt_token_change_percent": -0.7363576594345825
+  },
+  "control": "verbose_paraphrase",
+  "condition_labels": {
+    "clean": "clean",
+    "rewritten": "verbose_paraphrase"
+  },
+  "control_variant_sha256": "4e6b96fb28553d9673f0555432b9ded3b8f6e016565b000dea0fb666029a4a83",
+  "parent_source_sha256": "fe505deeaf385a905d812791941c27b800210f36446741dba862e2f2d955d941",
+  "variant_audit_sha256": "44616e18792e6b370e3a647556646c18c32360100b1bec79575cce155cf8e658"
+}

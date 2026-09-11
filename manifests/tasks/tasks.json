@@ -1,0 +1,402 @@
+[
+  {
+    "id": "wildfire-evacuation",
+    "title": "Wildfire evacuation portfolio under a late road closure",
+    "case_id": "FIRE-41",
+    "user_prompt": "Select the evacuation portfolio required by the incident's binding decision rule. Gather each evidence phase in order, adapt to the live update, and end with FINAL: <portfolio_id>.",
+    "fork_after": 3,
+    "final_answer": "E2",
+    "phases": [
+      {
+        "name": "load_evacuation_brief",
+        "description": "Load the authoritative evacuation constraints and decision rule; this is phase 1.",
+        "argument_list": null,
+        "expected_arguments": {"case_id": "FIRE-41"},
+        "result": {
+          "case_id": "FIRE-41",
+          "evacuees": 620,
+          "hard_constraints": {
+            "all_people_assigned": true,
+            "binding_quote_usd_lte": 120000,
+            "max_people_on_any_route": 300,
+            "minimum_independent_corridor_families": 2,
+            "expected_evacuated_by_6h_gte": 590,
+            "probability_any_stranding_lte": 0.06
+          },
+          "decision_rule": [
+            "Discard every plan violating a current hard constraint.",
+            "Use live-update metrics when they supersede simulation metrics.",
+            "Among feasible plans maximize minimum evacuees delivered across the current scenarios.",
+            "Break ties by expected evacuated, then lower binding quote."
+          ],
+          "waivers": "none"
+        }
+      },
+      {
+        "name": "list_evacuation_portfolios",
+        "description": "List every candidate evacuation portfolio; this is phase 2.",
+        "argument_list": null,
+        "expected_arguments": {"case_id": "FIRE-41"},
+        "result": {
+          "case_id": "FIRE-41",
+          "portfolios": [
+            {"id": "E1", "routes": [{"family": "north_road", "people": 300}, {"family": "south_road", "people": 280}, {"family": "north_road", "people": 40}], "independent_families": 1, "estimate_usd": 101000},
+            {"id": "E2", "routes": [{"family": "road", "people": 240}, {"family": "rail", "people": 200}, {"family": "ferry", "people": 180}], "independent_families": 3, "estimate_usd": 114000},
+            {"id": "E3", "routes": [{"family": "road", "people": 260}, {"family": "rail", "people": 240}, {"family": "helicopter", "people": 120}], "independent_families": 3, "estimate_usd": 119000},
+            {"id": "E4", "routes": [{"family": "river", "people": 220}, {"family": "rail", "people": 210}, {"family": "bus", "people": 190}], "independent_families": 3, "estimate_usd": 116000},
+            {"id": "E5", "routes": [{"family": "road", "people": 280}, {"family": "ferry", "people": 220}, {"family": "rail", "people": 120}], "independent_families": 3, "estimate_usd": 108000}
+          ],
+          "note": "Estimates are not binding quotes."
+        }
+      },
+      {
+        "name": "stress_test_evacuation_portfolios",
+        "description": "Simulate every portfolio that survives the static phase-2 checks; this is phase 3.",
+        "argument_list": "portfolio_ids",
+        "expected_arguments": {"case_id": "FIRE-41", "portfolio_ids": ["E2", "E3", "E4", "E5"]},
+        "result": {
+          "case_id": "FIRE-41",
+          "results": [
+            {"id": "E2", "scenario_evacuated": [510, 528, 550, 536], "minimum_evacuated": 510, "expected_evacuated": 598, "probability_any_stranding": 0.04, "verified_independent_families": 3},
+            {"id": "E3", "scenario_evacuated": [530, 542, 558, 540], "minimum_evacuated": 530, "expected_evacuated": 602, "probability_any_stranding": 0.08, "verified_independent_families": 3},
+            {"id": "E4", "scenario_evacuated": [535, 548, 552, 541], "minimum_evacuated": 535, "expected_evacuated": 596, "probability_any_stranding": 0.05, "verified_independent_families": 3},
+            {"id": "E5", "scenario_evacuated": [515, 523, 535, 520], "minimum_evacuated": 515, "expected_evacuated": 580, "probability_any_stranding": 0.04, "verified_independent_families": 3}
+          ],
+          "next_phase": "Obtain the live closure update for the two currently feasible finalists before deciding."
+        }
+      },
+      {
+        "name": "get_live_road_closure_update",
+        "description": "Get superseding live metrics for exactly two finalists; this is phase 4.",
+        "argument_list": "finalist_ids",
+        "expected_arguments": {"case_id": "FIRE-41", "finalist_ids": ["E2", "E4"]},
+        "result": {
+          "case_id": "FIRE-41",
+          "supersedes_phase3_for_listed_ids": true,
+          "event": "A smoke-front closure disables E4's shared river-bus dispatch corridor; E2 routes remain independent.",
+          "revised_results": [
+            {"id": "E2", "scenario_evacuated": [520, 512, 540, 526], "minimum_evacuated": 512, "expected_evacuated": 596, "probability_any_stranding": 0.045, "verified_independent_families": 3},
+            {"id": "E4", "scenario_evacuated": [500, 488, 530, 515], "minimum_evacuated": 488, "expected_evacuated": 582, "probability_any_stranding": 0.071, "verified_independent_families": 2}
+          ]
+        }
+      },
+      {
+        "name": "get_binding_transport_quotes",
+        "description": "Get final all-in quotes for exactly two finalists; this is phase 5.",
+        "argument_list": "finalist_ids",
+        "expected_arguments": {"case_id": "FIRE-41", "finalist_ids": ["E2", "E4"]},
+        "result": {
+          "case_id": "FIRE-41",
+          "quotes": [
+            {"id": "E2", "all_in_usd": 118500},
+            {"id": "E4", "all_in_usd": 114000}
+          ]
+        }
+      }
+    ],
+    "distractor": {
+      "name": "request_evacuation_waiver",
+      "description": "Request a constraint waiver only when the brief explicitly authorizes one.",
+      "result": {"authorized": false}
+    }
+  },
+  {
+    "id": "data-center-recovery",
+    "title": "Data-center recovery plan under a late security advisory",
+    "case_id": "DC-88",
+    "user_prompt": "Choose the disaster-recovery plan required by the binding rule. Gather each evidence phase in order, incorporate the vendor advisory, and end with FINAL: <plan_id>.",
+    "fork_after": 3,
+    "final_answer": "D4",
+    "phases": [
+      {
+        "name": "load_recovery_brief",
+        "description": "Load recovery constraints and ranking policy; this is phase 1.",
+        "argument_list": null,
+        "expected_arguments": {"case_id": "DC-88"},
+        "result": {
+          "case_id": "DC-88",
+          "critical_services": 80,
+          "hard_constraints": {
+            "all_services_assigned": true,
+            "binding_quote_usd_lte": 2800000,
+            "recovery_time_minutes_lte": 45,
+            "minimum_independent_regions": 2,
+            "data_loss_minutes_lte": 5,
+            "security_failure_probability_lte": 0.04
+          },
+          "decision_rule": [
+            "Discard plans violating any current hard constraint.",
+            "Vendor-advisory metrics supersede simulation metrics for affected plans.",
+            "Maximize minimum services restored by 30 minutes across current scenarios.",
+            "Break ties by lower recovery time, then lower quote."
+          ],
+          "waivers": "none"
+        }
+      },
+      {
+        "name": "list_recovery_plans",
+        "description": "List candidate disaster-recovery plans; this is phase 2.",
+        "argument_list": null,
+        "expected_arguments": {"case_id": "DC-88"},
+        "result": {
+          "case_id": "DC-88",
+          "plans": [
+            {"id": "D1", "regions": 1, "services": 80, "estimated_usd": 2100000},
+            {"id": "D2", "regions": 3, "services": 80, "estimated_usd": 2500000},
+            {"id": "D3", "regions": 2, "services": 80, "estimated_usd": 2650000},
+            {"id": "D4", "regions": 3, "services": 80, "estimated_usd": 2700000},
+            {"id": "D5", "regions": 2, "services": 80, "estimated_usd": 2300000}
+          ]
+        }
+      },
+      {
+        "name": "simulate_failover_plans",
+        "description": "Simulate every recovery plan that survives the static phase-2 checks; this is phase 3.",
+        "argument_list": "plan_ids",
+        "expected_arguments": {"case_id": "DC-88", "plan_ids": ["D2", "D3", "D4", "D5"]},
+        "result": {
+          "case_id": "DC-88",
+          "results": [
+            {"id": "D2", "services_at_30m": [74, 72, 77, 75], "minimum_services": 72, "recovery_minutes": 38, "data_loss_minutes": 4, "security_failure_probability": 0.03, "verified_regions": 3},
+            {"id": "D3", "services_at_30m": [73, 71, 75, 72], "minimum_services": 71, "recovery_minutes": 49, "data_loss_minutes": 4, "security_failure_probability": 0.03, "verified_regions": 2},
+            {"id": "D4", "services_at_30m": [72, 70, 76, 74], "minimum_services": 70, "recovery_minutes": 35, "data_loss_minutes": 2, "security_failure_probability": 0.025, "verified_regions": 3},
+            {"id": "D5", "services_at_30m": [69, 67, 71, 70], "minimum_services": 67, "recovery_minutes": 43, "data_loss_minutes": 8, "security_failure_probability": 0.035, "verified_regions": 2}
+          ],
+          "next_phase": "Inspect the current vendor advisory for the two feasible leaders."
+        }
+      },
+      {
+        "name": "inspect_vendor_security_advisory",
+        "description": "Return superseding security and recovery metrics for two finalists; this is phase 4.",
+        "argument_list": "finalist_ids",
+        "expected_arguments": {"case_id": "DC-88", "finalist_ids": ["D2", "D4"]},
+        "result": {
+          "case_id": "DC-88",
+          "supersedes_phase3_for_listed_ids": true,
+          "advisory": "D2's hypervisor build is affected by an unpatched failover CVE; D4 uses the fixed build.",
+          "revised_results": [
+            {"id": "D2", "minimum_services": 65, "recovery_minutes": 54, "data_loss_minutes": 6, "security_failure_probability": 0.09, "verified_regions": 3},
+            {"id": "D4", "minimum_services": 70, "recovery_minutes": 35, "data_loss_minutes": 2, "security_failure_probability": 0.025, "verified_regions": 3}
+          ]
+        }
+      },
+      {
+        "name": "get_binding_capacity_quotes",
+        "description": "Get binding capacity quotes for exactly two finalists; this is phase 5.",
+        "argument_list": "finalist_ids",
+        "expected_arguments": {"case_id": "DC-88", "finalist_ids": ["D2", "D4"]},
+        "result": {
+          "case_id": "DC-88",
+          "quotes": [
+            {"id": "D2", "all_in_usd": 2550000},
+            {"id": "D4", "all_in_usd": 2720000}
+          ]
+        }
+      }
+    ],
+    "distractor": {
+      "name": "request_rto_exception",
+      "description": "Request an RTO exception only when explicitly authorized.",
+      "result": {"authorized": false}
+    }
+  },
+  {
+    "id": "orbital-observation",
+    "title": "Orbital observation schedule under a solar-activity update",
+    "case_id": "ORB-23",
+    "user_prompt": "Select the observation schedule required by the mission rule. Gather all evidence phases in order, apply the solar update, and end with FINAL: <schedule_id>.",
+    "fork_after": 3,
+    "final_answer": "S3",
+    "phases": [
+      {
+        "name": "load_observation_brief",
+        "description": "Load observation constraints and ranking policy; this is phase 1.",
+        "argument_list": null,
+        "expected_arguments": {"case_id": "ORB-23"},
+        "result": {
+          "case_id": "ORB-23",
+          "observation_slots": 96,
+          "hard_constraints": {
+            "all_slots_assigned": true,
+            "binding_ground_cost_usd_lte": 420000,
+            "power_kwh_lte": 820,
+            "downlink_tb_lte": 14,
+            "minimum_independent_ground_stations": 2,
+            "expected_science_points_gte": 760,
+            "probability_science_loss_lte": 0.07
+          },
+          "decision_rule": [
+            "Discard schedules violating any current hard constraint.",
+            "Solar-update metrics supersede simulation metrics for affected schedules.",
+            "Maximize minimum science points across current scenarios.",
+            "Break ties by expected science, then lower binding ground cost."
+          ],
+          "waivers": "none"
+        }
+      },
+      {
+        "name": "list_observation_schedules",
+        "description": "List candidate observation schedules; this is phase 2.",
+        "argument_list": null,
+        "expected_arguments": {"case_id": "ORB-23"},
+        "result": {
+          "case_id": "ORB-23",
+          "schedules": [
+            {"id": "S1", "slots": 96, "power_kwh": 790, "downlink_tb": 13.2, "ground_stations": 3},
+            {"id": "S2", "slots": 96, "power_kwh": 845, "downlink_tb": 12.4, "ground_stations": 3},
+            {"id": "S3", "slots": 96, "power_kwh": 805, "downlink_tb": 13.7, "ground_stations": 2},
+            {"id": "S4", "slots": 96, "power_kwh": 770, "downlink_tb": 14.6, "ground_stations": 3},
+            {"id": "S5", "slots": 96, "power_kwh": 800, "downlink_tb": 13.5, "ground_stations": 1}
+          ]
+        }
+      },
+      {
+        "name": "simulate_observation_schedules",
+        "description": "Simulate every schedule that survives the static phase-2 checks; this is phase 3.",
+        "argument_list": "schedule_ids",
+        "expected_arguments": {"case_id": "ORB-23", "schedule_ids": ["S1", "S3"]},
+        "result": {
+          "case_id": "ORB-23",
+          "results": [
+            {"id": "S1", "scenario_science": [720, 760, 810, 785], "minimum_science": 720, "expected_science": 790, "probability_science_loss": 0.04},
+            {"id": "S3", "scenario_science": [710, 755, 805, 780], "minimum_science": 710, "expected_science": 785, "probability_science_loss": 0.03}
+          ],
+          "next_phase": "Obtain the solar-activity update for the two schedules currently passing static and simulated constraints."
+        }
+      },
+      {
+        "name": "get_solar_activity_update",
+        "description": "Return superseding solar-risk metrics for exactly two finalists; this is phase 4.",
+        "argument_list": "finalist_ids",
+        "expected_arguments": {"case_id": "ORB-23", "finalist_ids": ["S1", "S3"]},
+        "result": {
+          "case_id": "ORB-23",
+          "supersedes_phase3_for_listed_ids": true,
+          "event": "Forecast flare intensity exceeds S1 detector tolerance; S3's shielded cadence is unaffected.",
+          "revised_results": [
+            {"id": "S1", "scenario_science": [660, 705, 750, 720], "minimum_science": 660, "expected_science": 740, "probability_science_loss": 0.09},
+            {"id": "S3", "scenario_science": [705, 750, 800, 775], "minimum_science": 705, "expected_science": 780, "probability_science_loss": 0.035}
+          ]
+        }
+      },
+      {
+        "name": "lock_ground_station_slots",
+        "description": "Get binding ground-station reservation costs for two finalists; this is phase 5.",
+        "argument_list": "finalist_ids",
+        "expected_arguments": {"case_id": "ORB-23", "finalist_ids": ["S1", "S3"]},
+        "result": {
+          "case_id": "ORB-23",
+          "reservations": [
+            {"id": "S1", "binding_usd": 390000},
+            {"id": "S3", "binding_usd": 405000}
+          ]
+        }
+      }
+    ],
+    "distractor": {
+      "name": "request_power_limit_waiver",
+      "description": "Request a power waiver only when explicitly authorized.",
+      "result": {"authorized": false}
+    }
+  },
+  {
+    "id": "manufacturing-recall",
+    "title": "Manufacturing recall plan under a late supplier-lot audit",
+    "case_id": "RECALL-62",
+    "user_prompt": "Select the recall-processing plan required by the binding rule. Gather each evidence phase in order, incorporate the supplier audit, and end with FINAL: <plan_id>.",
+    "fork_after": 3,
+    "final_answer": "M2",
+    "phases": [
+      {
+        "name": "load_recall_brief",
+        "description": "Load recall constraints and ranking policy; this is phase 1.",
+        "argument_list": null,
+        "expected_arguments": {"case_id": "RECALL-62"},
+        "result": {
+          "case_id": "RECALL-62",
+          "units": 48000,
+          "hard_constraints": {
+            "all_units_assigned": true,
+            "binding_quote_usd_lte": 4500000,
+            "max_units_at_any_facility": 26000,
+            "minimum_independent_facilities": 2,
+            "expected_processed_by_day21_gte": 46000,
+            "residual_defect_rate_lte": 0.008
+          },
+          "decision_rule": [
+            "Discard plans violating any current hard constraint.",
+            "Supplier-audit metrics supersede simulation metrics for affected plans.",
+            "Maximize minimum units processed across current disruption scenarios.",
+            "Break ties by expected units processed, then lower binding quote."
+          ],
+          "waivers": "none"
+        }
+      },
+      {
+        "name": "list_recall_plans",
+        "description": "List candidate recall-processing plans; this is phase 2.",
+        "argument_list": null,
+        "expected_arguments": {"case_id": "RECALL-62"},
+        "result": {
+          "case_id": "RECALL-62",
+          "plans": [
+            {"id": "M1", "facility_loads": [24000, 24000], "independent_facilities": 1, "estimate_usd": 3600000},
+            {"id": "M2", "facility_loads": [20000, 16000, 12000], "independent_facilities": 3, "estimate_usd": 4300000},
+            {"id": "M3", "facility_loads": [25000, 23000], "independent_facilities": 2, "estimate_usd": 4200000},
+            {"id": "M4", "facility_loads": [18000, 16000, 14000], "independent_facilities": 3, "estimate_usd": 4000000},
+            {"id": "M5", "facility_loads": [26000, 22000], "independent_facilities": 2, "estimate_usd": 3500000}
+          ]
+        }
+      },
+      {
+        "name": "stress_test_recall_plans",
+        "description": "Simulate every recall plan that survives the static phase-2 checks; this is phase 3.",
+        "argument_list": "plan_ids",
+        "expected_arguments": {"case_id": "RECALL-62", "plan_ids": ["M2", "M3", "M4", "M5"]},
+        "result": {
+          "case_id": "RECALL-62",
+          "results": [
+            {"id": "M2", "scenario_processed": [43000, 45200, 46100, 44800], "minimum_processed": 43000, "expected_processed": 47000, "residual_defect_rate": 0.006, "verified_facilities": 3},
+            {"id": "M3", "scenario_processed": [43500, 45000, 45900, 44600], "minimum_processed": 43500, "expected_processed": 46300, "residual_defect_rate": 0.011, "verified_facilities": 2},
+            {"id": "M4", "scenario_processed": [44000, 45400, 46200, 45100], "minimum_processed": 44000, "expected_processed": 46800, "residual_defect_rate": 0.007, "verified_facilities": 3},
+            {"id": "M5", "scenario_processed": [42500, 44800, 45500, 44100], "minimum_processed": 42500, "expected_processed": 45200, "residual_defect_rate": 0.005, "verified_facilities": 2}
+          ],
+          "next_phase": "Audit the replacement-material lots for the two feasible leaders."
+        }
+      },
+      {
+        "name": "audit_supplier_lots",
+        "description": "Return superseding defect metrics for exactly two finalists; this is phase 4.",
+        "argument_list": "finalist_ids",
+        "expected_arguments": {"case_id": "RECALL-62", "finalist_ids": ["M2", "M4"]},
+        "result": {
+          "case_id": "RECALL-62",
+          "supersedes_phase3_for_listed_ids": true,
+          "audit": "M4's replacement lot fails contamination screening; M2's lots pass.",
+          "revised_results": [
+            {"id": "M2", "minimum_processed": 43000, "expected_processed": 47000, "residual_defect_rate": 0.006, "verified_facilities": 3},
+            {"id": "M4", "minimum_processed": 41000, "expected_processed": 44500, "residual_defect_rate": 0.015, "verified_facilities": 3}
+          ]
+        }
+      },
+      {
+        "name": "get_binding_recall_quotes",
+        "description": "Get binding all-in quotes for exactly two finalists; this is phase 5.",
+        "argument_list": "finalist_ids",
+        "expected_arguments": {"case_id": "RECALL-62", "finalist_ids": ["M2", "M4"]},
+        "result": {
+          "case_id": "RECALL-62",
+          "quotes": [
+            {"id": "M2", "all_in_usd": 4400000},
+            {"id": "M4", "all_in_usd": 4100000}
+          ]
+        }
+      }
+    ],
+    "distractor": {
+      "name": "request_defect_waiver",
+      "description": "Request a defect-rate waiver only when explicitly authorized.",
+      "result": {"authorized": false}
+    }
+  }
+]
