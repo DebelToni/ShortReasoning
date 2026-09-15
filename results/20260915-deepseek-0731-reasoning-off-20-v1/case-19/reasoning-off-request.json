@@ -1,0 +1,32 @@
+{
+  "messages": [
+    {
+      "content": "Rewrite one historical assistant reasoning block into a shorter faithful state record for the same coding agent. Output only the state record as plain text, without labels, preamble, JSON, or fences.\n\nPreserve every decision-relevant observation, file or symbol name, number, conclusion, correction, unresolved uncertainty, rejected alternative that may matter later, and the intended next action. The pending tool result is unavailable: never predict it. Remove repeated commands, narration, rhetoric, headings, and redundant restatement. Prefer compact clauses. Fidelity outranks brevity, but the result must be shorter than the source.",
+      "role": "system"
+    },
+    {
+      "content": "{\"pending_result\": \"withheld\", \"raw_reasoning\": \"No JSONField references in admin currently. That confirms issue. For readonly JSONField, `display_for_field` is called with value (a dict) and field (a models.JSONField). No elif for JSONField → falls through to display_for_value, which does `str(value)` → Python dict repr, e.g., `{'foo': 'bar'}`.\\n\\nFix: add case for `models.JSONField` before else, using its encoder to produce JSON. Use `field.formfield()` to get a forms.JSONField? But formfield for models.JSONField returns a forms.CharField by default. Actually, there is a `forms.JSONField` in django/forms/fields.py that we imported. The models.JSONField could be overridden with `formfield` in json.py. But perhaps minimal fix in `display_for_field`: `elif isinstance(field, models.JSONField): return json.dumps(value, cls=field.encoder)` (or ensure encoder present). However PR says call `prepare_value` of the JSONField (form maybe) to handle InvalidJSONInput. But `display_for_field` receives value from database, already deserialized; no InvalidJSONInput likely. Yet using `field.formfield().prepare_value(value)` could be generic but might instantiates a form field on each call. Simpler: use `json.dumps` with `field.encoder`, maybe also `indent=2`? Not required; just produce valid JSON. Should also ensure `skipkeys` maybe not needed. Could handle `InvalidJSONInput` if value is such an instance.\\n\\nBut to be consistent with PR statement: \\\"I believe the fix would be to add a special case in django.contrib.admin.utils.display_for_field to call the prepare_value of the JSONField (not calling json.dumps directly to take care of the InvalidJSONInput case).\\\"\\n\\nWhere does `prepare_value` of the form JSONField exist? In `django/forms/fields.py`. The model JSONField doesn't have `prepare_value`. So perhaps we should call `field.formfield().prepare_value(value)`. But `formfield()` may be overridden. Let's check if `models.JSONField` has `formfield` method in its own file (json.py). It didn't appear in the snippet. But it inherits from `Field`. It may have its own `formfield` defined elsewhere. Could also just use `forms.JSONField(encoder=field.encoder, decoder=field.decoder).prepare_value(value)`. That would create a form field each time but okay.\\n\\nBetter: add a helper to get formfield for model JSONField. Probably models.JSONField should have a `formfield` override returning `forms.JSONField`. Let's investigate: check `django/forms/fields.py` for `JSONField`.\", \"requested_action_arguments_preserved_outside_reasoning\": true, \"requested_action_name\": \"bash\"}",
+      "role": "user"
+    }
+  ],
+  "model": "deepseek/deepseek-v4-flash-0731",
+  "provider": {
+    "only": [
+      "DeepInfra"
+    ],
+    "allow_fallbacks": false,
+    "require_parameters": true
+  },
+  "reasoning": {
+    "effort": "none",
+    "exclude": false
+  },
+  "usage": {
+    "include": true
+  },
+  "max_tokens": 4096,
+  "stream": true,
+  "stream_options": {
+    "include_usage": true
+  }
+}

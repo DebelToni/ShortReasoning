@@ -1,0 +1,31 @@
+{
+  "model": "openai/gpt-5.6-sol",
+  "provider": {
+    "only": [
+      "OpenAI"
+    ],
+    "allow_fallbacks": false,
+    "require_parameters": true
+  },
+  "messages": [
+    {
+      "role": "system",
+      "content": "Compare two candidate rewrites against the ORIGINAL historical coding-agent reasoning.\nJudge each independently for preservation of decision-relevant observations, identifiers,\nnumbers, boolean conditions, code structure, conclusions, corrections, unresolved uncertainty,\nrejected alternatives, and intended next actions. Do not solve or improve the underlying task.\nDistinguish harmless stylistic shortening from material omissions, changes, or unsupported additions.\nThe pending tool result is unavailable. Do not infer facts from outside the supplied original.\nA compact state need not be executable code, but its meaning and control flow must remain clear.\nFor every Problem, quote specific evidence from the original and candidate; do not invent quotations.\nReturn only a JSON object with these keys:\nA and B: objects with verdict (Pass, Problem, or Unsure), flags (array chosen from OM, CF, CU, UA, NA),\nevidence (array of objects with original_quote, candidate_quote, explanation), and summary (string).\nOM=omission; CF=changed fact/condition/code meaning; CU=changed uncertainty/evidence status;\nUA=unsupported addition; NA=changed next action.\npreferred: A, B, Tie, or Unsure, based on fidelity, not merely length.\ncomparison: a short explanation. Be concise; keep the entire answer under 700 words."
+    },
+    {
+      "role": "user",
+      "content": "{\"original\": \"Now produce `\\\\sphinxcode{\\\\sphinxupquote{%...%` then `}}` appended separately yields `\\\\sphinxcode{\\\\sphinxupquote{%...%}}`. Good. However, need to ensure `self.body.append('}}')` unchanged; after content ends with `%`, TeX will handle closing braces without extra space. Also need to remove leading whitespace before first `%`. The `rstrip()` done after slicing includes trailing newline removal. But we also may have leading whitespace in the input? Likely none. The content lines start with no leading whitespace because Pygments output each line flush left. The newline after `{` replaced by `%` suppresses space. For `visit_desc_inline` etc., those don't use highlighter; they rely on node text which probably has no leading/trailing whitespace; but to be safe, we could also add `%` for those. But let's focus on the code path for inline code with language. Also check `visit_literal` with no language or `code` class: `\\\\sphinxcode{\\\\sphinxupquote{` then raises `SkipNode`? Actually for no language, it does `self.body.append(r'\\\\sphinxcode{\\\\sphinxupquote{')` then `return` and later `depart_literal` appends `}}`. The content inside comes from the node traversal (children). There may also be whitespace issues if the node includes leading/trailing spaces from Pygments? But for plain literal without language, no highlighting, so node text as-is, unlikely to have leading/trailing whitespace. However, the `visit_literal` generic branch does not raise `SkipNode`, so content is processed from children via `self.in_literal` variable. Need to check whether leading/trailing whitespace appears in that case too. But issue specifically from inline code with language.\\n\\nLet's edit the file.\\n\\nFirst, find exact lines to change.\", \"A\": \"Mechanism: `\\\\%...%` then `}}`. `self.body.append('}}')` unchanged. Trailing whitespace handled by `%` and existing `rstrip`. Leading whitespace before first `%` must be removed (Pygments flush left, unlikely). Newline after `{` replaced by `%` suppresses space.\\nOther paths: `visit_desc_inline` etc. (no highlighter, node text): no whitespace issue, safe to ignore. `visit_literal` (no language): `\\\\sphinxcode{\\\\sphinxupquote{`, content from `in_literal` (no SkipNode). Check if leading/trail whitespace appears? Primary is inline+language.\\nNext: Edit file, find exact lines to change.\", \"B\": \"Edit `sphinx/writers/text.py` (or wherever) near the `visit_literal` highlighter branch: change the append from `{\\\\\\\\sphinxupquote{` to `{\\\\\\\\sphinxupquote{%` and add `%` after `{`. Confirm leading whitespace is absent and keep `self.body.append('}}')` unchanged. Next: locate exact lines and apply the edit.\"}"
+    }
+  ],
+  "reasoning": {
+    "effort": "medium",
+    "exclude": true
+  },
+  "max_tokens": 4096,
+  "response_format": {
+    "type": "json_object"
+  },
+  "usage": {
+    "include": true
+  }
+}

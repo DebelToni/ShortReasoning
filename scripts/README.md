@@ -1,5 +1,7 @@
 # Reproduction entry points
 
+The none/low DeepSeek self-compaction runners, Sol judging protocol, and offline analysis are documented in [the compressor-effort diagnostic](../results/20260915-deepseek-compressor-effort-audit-v1/README.md).
+
 Offline headline recomputation is performed by `run_archive_smoke.py`. Individual deterministic commands are:
 
 ```bash

@@ -329,6 +329,7 @@ def check_cli_help() -> int:
         "run_history_controls.py", "run_history_tiers.py",
         "run_livecodebench_frozen.py", "analyze_camera_ready_controlled.py",
         "analyze_camera_ready_deployment.py",
+        "run_reasoning_off_diagnostic.py", "run_reasoning_low_diagnostic.py",
     )
     for script in scripts:
         run_checked([sys.executable, f"scripts/{script}", "--help"])
@@ -366,6 +367,11 @@ def main() -> None:
     ledger_records = check_response_ledger()
     replays = replay_analyses(args.work_dir.expanduser().resolve())
     check_metrics()
+    effort_summary = ROOT / "results/20260915-deepseek-compressor-effort-audit-v1/summary.json"
+    before_effort = effort_summary.read_bytes()
+    run_checked([sys.executable, "scripts/analyze_compressor_effort_diagnostic.py"])
+    assert effort_summary.read_bytes() == before_effort, "compressor-effort replay differs"
+    replays["compressor_effort"] = "exact"
     figure_tables = check_figure_data()
     json_files, python_files = check_json_and_python()
     cli_help = check_cli_help()
