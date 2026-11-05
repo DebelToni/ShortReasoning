@@ -1,0 +1,66 @@
+name: Publish ShortReasoning site
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'site/**'
+      - '.github/workflows/pages.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check JavaScript
+        run: node --check site/app.js
+      - name: Validate public aggregates
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          site = Path('site')
+          data = json.loads((site / 'data/results.json').read_text())
+          c, d = data['controlled'], data['deployment']
+          assert len(c['routes']) == 6 and len(d['models']) == 4
+          assert sum(r['shorter'] for r in c['routes']) == c['shorter'] == 151
+          assert sum(r['comparable'] for r in c['routes']) == c['tokenPairs'] == 172
+          assert sum(r['accepted'] for r in c['routes']) == c['acceptedSources'] == 58
+          assert sum(r['cleanSuccess'] for r in c['routes']) == c['cleanSuccess'] == 165
+          assert sum(r['compactSuccess'] for r in c['routes']) == c['compactSuccess'] == 166
+          assert d['assignedPerArm'] == 50
+          for model in d['models']:
+              for name in ('normal', 'external', 'self'):
+                  a = model[name]
+                  assert 0 <= a['score'] <= 50
+                  assert abs(a['targetHours'] + a['rewriteHours'] - a['inclusiveHours']) < 1e-9
+                  if name != 'normal':
+                      assert a['rawWords'] == a['compactWords'] + a['savedWords']
+                      assert abs(100 * (a['spendUsd'] / model['normal']['spendUsd'] - 1) - a['spendChangePercent']) < 1e-8
+          for key, expected in [('spendChangePercent', 6), ('targetTimeChangePercent', 7), ('inclusiveTimeChangePercent', 2)]:
+              assert sum(m[a][key] < 0 for m in d['models'] for a in ('external', 'self')) == expected
+          for path in site.rglob('*'):
+              if path.is_file() and path.suffix in ('.html', '.css', '.js', '.json', '.svg'):
+                  text = path.read_text()
+                  assert not any(p in text for p in ('/home/', '/Users/', '/Volumes/', 'file://')), path
+          PY
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+      - name: Deploy
+        id: deployment
+        uses: actions/deploy-pages@v5
