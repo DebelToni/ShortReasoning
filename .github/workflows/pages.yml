@@ -26,7 +26,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Check JavaScript
-        run: node --check site/app.js
+        run: for file in site/*.js; do node --check "$file"; done
       - name: Validate public aggregates
         run: |
           python3 - <<'PY'
@@ -58,9 +58,23 @@ jobs:
                   assert not any(p in text for p in ('/home/', '/Users/', '/Volumes/', 'file://')), path
           PY
       - uses: actions/configure-pages@v5
+      - name: Build cache-versioned site
+        run: |
+          python3 - <<'PY'
+          import hashlib
+          import shutil
+          from pathlib import Path
+          shutil.copytree('site', '_site')
+          page = Path('_site/index.html')
+          html = page.read_text()
+          for path in [*Path('_site').glob('*.css'), *Path('_site').glob('*.js')]:
+              version = hashlib.sha256(path.read_bytes()).hexdigest()[:12]
+              html = html.replace(f'"{path.name}"', f'"{path.name}?v={version}"')
+          page.write_text(html)
+          PY
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: site
+          path: _site
       - name: Deploy
         id: deployment
         uses: actions/deploy-pages@v5

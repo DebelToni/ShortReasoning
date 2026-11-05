@@ -18,6 +18,7 @@
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%23007561'/%3E%3Cpath d='M17 20h30M17 32h22M17 44h14' stroke='white' stroke-width='5' stroke-linecap='round'/%3E%3C/svg%3E">
   <link rel="stylesheet" href="styles.css">
   <script src="app.js" defer></script>
+  <script src="walkthrough.js" defer></script>
 </head>
 <body>
   <header class="nav wrap">
@@ -34,24 +35,14 @@
         <p class="author"><a href="https://toni.foo">Anton Hristov</a></p>
         <div class="links"><a class="button primary" href="https://arxiv.org/abs/2611.03852">Read the paper ↗</a><a class="button" href="https://github.com/DebelToni/ShortReasoning">Code ↗</a><a class="text-link" href="https://huggingface.co/papers/2611.03852">Discuss on HF ↗</a></div>
       </div>
-      <div class="method-demo panel" aria-label="Animated illustration of reasoning-history compaction">
-        <div class="panel-top"><span class="label">The intervention</span><button class="icon-button" id="method-play" aria-label="Pause method animation" aria-pressed="false">Ⅱ</button></div>
-        <div class="history-pair">
-          <div><span class="pill blue">Original history</span><div class="thought original"><span>Need to compare A and B.</span><span>Budget is 10. A costs 12.</span><span>12 is greater than 10.</span><span>So A exceeds the budget.</span><span>A must be rejected.</span><span>Need B’s remaining constraints.</span></div></div>
-          <div class="rewrite-arrow" aria-hidden="true">→<span>rewrite</span></div>
-          <div><span class="pill amber">Compact history</span><div class="thought compact"><span>Budget: 10.</span><span>Reject A: cost 12.</span><span>Check B’s constraints.</span></div></div>
-        </div>
-        <div class="shared-tool"><span class="tool-icon">⌘</span> Same pending tool result <span class="lock">↙ &nbsp; ↘</span></div>
-        <div class="continuations"><div><b>Same target</b><div class="token-lines clean-lines"><i></i><i></i><i></i><i></i><i></i></div></div><div><b>Same weights</b><div class="token-lines short-lines"><i></i><i></i><i></i></div></div></div>
-        <p class="demo-caption">Illustration. Only earlier assistant reasoning changes at the controlled fork.</p>
-      </div>
+      <div class="method-demo panel walkthrough" id="hero-story" aria-label="HTML animation: generate a reasoning rollout, rewrite its history, then continue with the same model"></div>
     </section>
 
     <section id="results" class="section wrap">
       <div class="section-heading"><div><p class="eyebrow">01 / Measured</p><h2>Shorter history. Shorter continuations.</h2></div><a class="text-link" href="https://arxiv.org/abs/2611.03852">Protocol & full results ↗</a></div>
       <div class="stats"><div><strong>151<span>/172</span></strong><p>paired continuations used less reasoning</p></div><div><strong>6<span>/6</span></strong><p>tested routes had a negative median change</p></div><div><strong>20–50<span>%</span></strong><p>route-level median reductions</p></div></div>
       <div class="controlled-grid">
-        <div class="panel chart-panel"><div class="panel-top"><h3>New reasoning, after the rewrite</h3><span class="pill blue">95% CI</span></div><div class="chart-axis"><span>−80%</span><span>−60%</span><span>−40%</span><span>−20%</span><span>0</span><span>+20%</span></div><div id="route-chart" aria-label="Reasoning change by model route"></div><p class="data-scope">Accepted histories, equal-horizon token comparisons. Acceptance rates differ across routes.</p></div>
+        <div class="panel chart-panel"><div class="panel-top"><h3>New reasoning, after the rewrite</h3><span class="pill blue">95% CI</span></div><div class="chart-axis" aria-hidden="true"><span></span><div class="axis-scale" id="route-axis"></div><span class="axis-heading">Median</span></div><div id="route-chart" aria-label="Reasoning change by model route"></div><p class="data-scope">Accepted histories, equal-horizon token comparisons. Acceptance rates differ across routes.</p></div>
         <aside class="route-detail panel" id="route-detail" aria-live="polite"></aside>
       </div>
       <details class="paper-figure"><summary>See the paired effects from the paper</summary><img src="assets/controlled-effects.svg" loading="lazy" alt="Distribution of paired future-reasoning changes across the six tested model routes"><p>Twenty comparisons grew longer and one was unchanged. The intervention does not shorten every continuation.</p></details>
@@ -60,7 +51,7 @@
     <section id="agents" class="section wrap">
       <div class="section-heading"><div><p class="eyebrow">02 / Retained coding-agent runs</p><h2>Count the rewrite, too.</h2></div><span class="section-number">50 tasks / arm</span></div>
       <div class="deployment-intro"><p>Six of eight configurations cost less with rewriting included. Only the two MiniMax configurations reduced rewrite-inclusive model-request time.</p><p><strong>64.0%</strong> of cache-distinct reasoning-history words were removed across the treatment runs. These are history words, not billed input tokens.</p></div>
-      <div class="segmented" id="metric-tabs" role="group" aria-label="Deployment metric"><button data-metric="spendChangePercent" aria-pressed="true">Spend</button><button data-metric="targetTimeChangePercent" aria-pressed="false">Target time</button><button data-metric="inclusiveTimeChangePercent" aria-pressed="false">Time incl. rewrite</button></div>
+      <div class="segmented" id="metric-tabs" role="group" aria-label="Deployment metric"><button data-metric="spendChangePercent" aria-pressed="true">Spend</button><button data-metric="targetTimeChangePercent" aria-pressed="false">Target time</button></div>
       <div class="deployment-table panel"><div class="deployment-head"><span>Target / compactor</span><span>Task score</span><span id="metric-heading">Spend change</span></div><div id="deployment-rows"></div></div>
       <p class="data-scope" id="metric-scope">Spend includes captured rewriting charges. Nemotron target costs use a common-tariff estimate. All assigned tasks remain, including unsolved and model-limit outcomes.</p>
       <details class="paper-figure"><summary>What about task quality?</summary><p>Controlled exact success was 165/174 with original history and 166/174 with compact history, with changes in both directions across routes. This does not establish quality noninferiority. Deployment scores above also vary by model and compressor.</p><img src="assets/length-quality.svg" loading="lazy" alt="Length-matched paraphrases do not reproduce the shortening pattern and have different quality outcomes"></details>
@@ -81,19 +72,11 @@
     <section id="distillation" class="section wrap training-section">
       <div class="section-heading"><div><p class="eyebrow violet">04 / Proposed training</p><h2>Make the short style<br>the default.</h2></div><span class="pill violet">Self-distillation</span></div>
       <p class="training-intro">Use a frozen copy of the model with compact history as the teacher. Train the student under its <strong>original history</strong> to match that continuation behavior.</p>
-      <div class="distill-grid">
-        <div class="teacher-student panel">
-          <div class="distill-lane"><div class="context-note amber"><b>Compact history H꜀</b><span>Budget 10 · reject A · check B</span></div><span class="lane-arrow">→</span><div class="model-node teacher"><b>Teacher θ</b><span>Frozen · same model</span></div></div>
-          <div class="distill-lane"><div class="context-note blue"><b>Original history H</b><span>Original reasoning and messages</span></div><span class="lane-arrow">→</span><div class="model-node student"><b>Student φ</b><span>Trainable</span><i class="update-pulse" aria-hidden="true"></i></div></div>
-          <div class="gradient-path"><span>KL targets from teacher</span><span class="gradient-arrow">↳ update φ only</span></div>
-          <p class="shared-prefix">Same vocabulary. Same continuation prefix. No gradient through the teacher or the rewrite.</p>
-        </div>
-        <div class="distribution panel"><div class="panel-top"><h3>Match the next-token distribution</h3><button class="icon-button" id="distill-play" aria-label="Pause distillation animation" aria-pressed="false">Ⅱ</button></div><div class="legend"><span><i class="teacher-key"></i>Teacher</span><span><i class="student-key"></i>Student</span><span class="toy-label">Illustrative probabilities</span></div><div id="distribution-bars"></div><div class="loss-line"><span>KL(teacher ∥ student)</span><strong id="kl-value">0.000</strong></div><label class="slider-label" for="match-slider">Student match <input id="match-slider" type="range" min="0" max="100" value="0"></label></div>
-      </div>
-      <details class="objective"><summary>The KL objective and gradient flow</summary><p class="equation">L = ∑ₜ ∑ᵥ pθ(v | H꜀, y&lt;ₜ) log [pθ(v | H꜀, y&lt;ₜ) / pφ(v | H, y&lt;ₜ)]</p><p>The teacher sees compact reasoning; the student sees the original context. Compare their distributions along a shared continuation prefix and backpropagate into φ only. The bars interpolate a toy student distribution to explain the objective; they are not a training run or a measured gain.</p><p>Training on the rewritten traces directly is another option, using supervised token loss. A weaker <em>compactor</em> can generate text for the teacher to read; it does not need to share the teacher/student tokenizer.</p><p>This proposal needs quality-filtered targets and evaluation for capability retention. Related work: <a href="https://arxiv.org/abs/2601.19897">Self-Distillation Enables Continual Learning</a>.</p></details>
+      <div class="panel walkthrough training-walkthrough" id="training-story" aria-label="Proposed training animation: student rollout, history compaction, then KL alignment into the original-history student"></div>
+      <details class="objective"><summary>The KL objective and gradient flow</summary><p class="equation">L = ∑ₜ ∑ᵥ pθ(v | H꜀, y&lt;ₜ) log [pθ(v | H꜀, y&lt;ₜ) / pφ(v | H, y&lt;ₜ)]</p><p>The teacher sees compact reasoning; the student sees the original context. Compare their distributions along a shared continuation prefix and backpropagate into φ only. The animation interpolates illustrative next-token distributions to explain the objective; it is not a training run or a measured gain.</p><p>Training on the rewritten traces directly is another option, using supervised token loss. A weaker <em>compactor</em> can generate text for the teacher to read; it does not need to share the teacher/student tokenizer.</p><p>This proposal needs quality-filtered targets and evaluation for capability retention. Related work: <a href="https://arxiv.org/abs/2601.19897">Self-Distillation Enables Continual Learning</a>.</p></details>
     </section>
 
-    <section class="takeaway wrap"><p class="eyebrow">The broader bet</p><h2>The capability may already be there.</h2><p>The tested models generated shorter continuations from changed histories without retraining. I suspect compact reasoning is much more widespread, perhaps universal, in current open-weight reasoning models. We should incentivize future generations to use it while keeping their problem-solving ability.</p><div class="links"><a class="button primary" href="https://arxiv.org/abs/2611.03852">Read ShortReasoning ↗</a><button class="button" id="cite-button">Cite</button><a class="text-link" href="https://raw.githubusercontent.com/DebelToni/ShortReasoning/main/figures/reasoning-compaction.gif">Method GIF ↗</a></div></section>
+    <section class="takeaway wrap"><p class="eyebrow">The broader bet</p><h2>The capability may already be there.</h2><p>The tested models generated shorter continuations from changed histories without retraining. I suspect compact reasoning is much more widespread, perhaps universal, in current open-weight reasoning models. We should incentivize future generations to use it while keeping their problem-solving ability.</p><div class="links"><a class="button primary" href="https://arxiv.org/abs/2611.03852">Read ShortReasoning ↗</a><button class="button" id="cite-button">Cite</button></div></section>
     <noscript><p class="wrap">The paper, figures and links are available without JavaScript. Enable it for interactive charts and animations.</p></noscript>
   </main>
   <footer class="wrap"><span>Anton Hristov · 2026</span><a href="https://doi.org/10.18653/2026.realm-1.84">Conference version ↗</a><a href="https://github.com/DebelToni/ShortReasoning">Repository ↗</a></footer>

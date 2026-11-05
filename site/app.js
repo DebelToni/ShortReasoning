@@ -20,13 +20,20 @@ function options(id, attribute, callback) {
 }
 
 function drawModel(mode = 'self') {
-  const modes = [['self', 'Same model', 'self-rewrite'], ['specialist', 'Specialist', 'compaction fine-tune'], ['small', 'Small model', '+ span / block selector']];
+  const modes = [
+    {key:'self', title:'Same model', sub:'self-rewrite', x:250, y:18, w:150, h:56},
+    {key:'specialist', title:'Specialist', sub:'fine-tuned', x:269, y:104, w:112, h:44},
+    {key:'small', title:'Small model', sub:'fast / selector', x:250, y:178, w:150, h:54}
+  ];
   let content = '';
-  modes.forEach(([key, title, sub], i) => {
-    const y = 26 + i * 75;
-    content += path(`M170 120 C205 120 205 ${y + 25} 250 ${y + 25}`, mode === key);
-    content += path(`M400 ${y + 25} C445 ${y + 25} 445 120 488 120`, mode === key);
-    content += box(250, y, 150, 50, title, sub, 'compactor-node', mode !== key);
+  modes.forEach(({key, title, sub, x, y, w, h}) => {
+    const cy = y + h / 2;
+    content += path(`M170 120 C205 120 205 ${cy} ${x} ${cy}`, mode === key);
+    content += path(`M${x + w} ${cy} C445 ${cy} 445 120 488 120`, mode === key);
+    const shape = key === 'small'
+      ? `<g><polygon class="node compactor-node" points="${x+16},${y} ${x+w-16},${y} ${x+w},${cy} ${x+w-16},${y+h} ${x+16},${y+h} ${x},${cy}"/><text x="${x+w/2}" y="${cy-3}" text-anchor="middle">${title}</text><text class="small-text" x="${x+w/2}" y="${cy+16}" text-anchor="middle">${sub}</text></g>`
+      : box(x, y, w, h, title, sub, 'compactor-node');
+    content += `<g class="model-choice${mode === key ? ' selected' : ''}" data-choice="${key}">${shape}</g>`;
   });
   content += box(20, 88, 150, 64, 'Reasoning block', 'facts · decisions · doubts');
   content += box(488, 88, 132, 64, 'Compact state', 'for the same target', 'tool-node');
@@ -125,76 +132,23 @@ track.addEventListener('scroll', () => {
 new IntersectionObserver((entries) => track.classList.toggle('in-view', entries[0].isIntersecting), {threshold: .1}).observe(track);
 selectCard(0, false);
 
-const methodDemo = $('.method-demo');
-$('#method-play').addEventListener('click', () => {
-  const paused = methodDemo.classList.toggle('paused');
-  $('#method-play').textContent = paused ? '▶' : 'Ⅱ';
-  $('#method-play').setAttribute('aria-label', `${paused ? 'Play' : 'Pause'} method animation`);
-  $('#method-play').setAttribute('aria-pressed', String(paused));
-});
-
-const teacher = [.20, .05, .25, .50];
-const initialStudent = [.30, .30, .30, .10];
-const tokens = ['Thus', 'Let', 'The', '[EOS]'];
-$('#distribution-bars').innerHTML = tokens.map((token, i) => `<div class="prob-row"><span>${token}</span><div class="prob-bars"><i style="width:${teacher[i] * 100}%"></i><i id="student-bar-${i}"></i></div><span class="prob-value" id="student-value-${i}"></span></div>`).join('');
-let trainingPlaying = !reducedMotion.matches;
-let trainingVisible = false;
-let trainingFrame = 0;
-let trainingEpoch = performance.now();
-function drawDistribution(alpha) {
-  const student = initialStudent.map((value, i) => value * (1 - alpha) + teacher[i] * alpha);
-  let kl = 0;
-  student.forEach((value, i) => {
-    $(`#student-bar-${i}`).style.width = `${value * 100}%`;
-    $(`#student-value-${i}`).textContent = value.toFixed(2);
-    kl += teacher[i] * Math.log(teacher[i] / value);
-  });
-  $('#kl-value').textContent = Math.max(0, kl).toFixed(3);
-}
-function queueTrainingFrame() {
-  if (trainingFrame || !trainingPlaying || !trainingVisible || document.hidden) return;
-  trainingFrame = requestAnimationFrame((now) => {
-    trainingFrame = 0;
-    const progress = (now - trainingEpoch) % 10000;
-    const alpha = Math.min(progress / 6500, 1);
-    $('#match-slider').value = String(alpha * 100);
-    drawDistribution(alpha);
-    queueTrainingFrame();
-  });
-}
-function setTrainingPlaying(playing) {
-  trainingPlaying = playing;
-  $('#distill-play').textContent = playing ? 'Ⅱ' : '▶';
-  $('#distill-play').setAttribute('aria-label', `${playing ? 'Pause' : 'Play'} distillation animation`);
-  $('#distill-play').setAttribute('aria-pressed', String(!playing));
-  $('.update-pulse').style.animationPlayState = playing ? 'running' : 'paused';
-  if (playing) { trainingEpoch = performance.now() - Number($('#match-slider').value) * 65; queueTrainingFrame(); }
-  else { cancelAnimationFrame(trainingFrame); trainingFrame = 0; }
-}
-$('#match-slider').addEventListener('input', (event) => { setTrainingPlaying(false); drawDistribution(Number(event.target.value) / 100); });
-$('#distill-play').addEventListener('click', () => setTrainingPlaying(!trainingPlaying));
-new IntersectionObserver((entries) => { trainingVisible = entries[0].isIntersecting; if (!trainingVisible) { cancelAnimationFrame(trainingFrame); trainingFrame = 0; } else queueTrainingFrame(); }, {threshold: .15}).observe($('#distillation'));
-document.addEventListener('visibilitychange', queueTrainingFrame);
-function syncMotionPreference() {
-  methodDemo.classList.toggle('paused', reducedMotion.matches);
-  $('#method-play').disabled = reducedMotion.matches;
-  $('#method-play').textContent = reducedMotion.matches ? '▶' : 'Ⅱ';
-  setTrainingPlaying(!reducedMotion.matches);
-}
-reducedMotion.addEventListener('change', syncMotionPreference);
-syncMotionPreference(); drawDistribution(0);
-
 async function loadResults() {
   const response = await fetch(new URL('data/results.json', document.baseURI));
   if (!response.ok) throw new Error(`Results failed to load: HTTP ${response.status}`);
   const data = await response.json();
   if (data.controlled.routes.length !== 6 || data.deployment.models.length !== 4) throw new Error('Unexpected results schema');
   const chart = $('#route-chart');
-  const pos = (value) => (value + 80) * 4;
+  const domainMin = Math.floor(Math.min(...data.controlled.routes.flatMap((r) => r.ci)) / 20) * 20;
+  const domainMax = Math.max(0, Math.ceil(Math.max(...data.controlled.routes.flatMap((r) => r.ci)) / 20) * 20);
+  const pos = (value) => (value - domainMin) / (domainMax - domainMin) * 100;
+  $('#route-axis').innerHTML = Array.from({length:(domainMax-domainMin)/20+1}, (_,i) => {
+    const value = domainMin + i * 20;
+    return `<span class="axis-tick" data-value="${value}" style="left:${pos(value)}%"><span>${value === 0 ? '0' : `${value < 0 ? '−' : '+'}${Math.abs(value)}%`}</span></span>`;
+  }).join('');
   data.controlled.routes.forEach((route, i) => {
     const row = document.createElement('button'); row.className = 'route-row'; row.setAttribute('aria-pressed', String(i === 0));
     row.setAttribute('aria-label', `${route.label}: ${signed(route.medianChangePercent)} median future reasoning change; 95% interval ${signed(route.ci[0])} to ${signed(route.ci[1])}`);
-    row.innerHTML = `<span class="route-label">${route.label}</span><svg class="route-spark" viewBox="0 0 400 28" preserveAspectRatio="none" aria-hidden="true"><line class="zero" x1="320" y1="0" x2="320" y2="28"/><line class="interval" x1="${pos(route.ci[0])}" x2="${pos(route.ci[1])}" y1="14" y2="14"/><circle class="median" cx="${pos(route.medianChangePercent)}" cy="14" r="5"/></svg>`;
+    row.innerHTML = `<span class="route-label">${route.label}</span><span class="route-plot" aria-hidden="true"><i class="route-zero" style="left:${pos(0)}%"></i><i class="route-interval" style="left:${pos(route.ci[0])}%;width:${pos(route.ci[1])-pos(route.ci[0])}%"></i><i class="route-median" style="left:${pos(route.medianChangePercent)}%"></i></span><span class="route-value">${signed(route.medianChangePercent)}</span>`;
     row.addEventListener('click', () => {
       $$('.route-row').forEach((r) => r.setAttribute('aria-pressed', String(r === row)));
       $('#route-detail').innerHTML = `<h3>${route.label}</h3><div class="detail-change">${signed(route.medianChangePercent)}</div><p class="detail-sub">median change in future reasoning</p><div class="detail-grid"><div><strong>${route.accepted}/${route.attempted}</strong><span>histories accepted</span></div><div><strong>${route.shorter}/${route.comparable}</strong><span>pairs shorter</span></div><div><strong>${route.cleanSuccess} → ${route.compactSuccess}</strong><span>success / ${route.qualityPairs}</span></div></div>`;
@@ -204,8 +158,7 @@ async function loadResults() {
   });
   const metrics = {
     spendChangePercent: {heading: 'Spend change', value: 'spendUsd', unit: 'usd', scope: 'Spend includes captured rewriting charges. Nemotron target costs use a common-tariff estimate. All 50 assigned tasks remain, including unsolved and model-limit outcomes.'},
-    targetTimeChangePercent: {heading: 'Target-only change', value: 'targetHours', unit: 'hours', scope: 'Summed target-model request durations only. Rewriting, tools, orchestration and evaluation are excluded; this is not end-to-end task latency.'},
-    inclusiveTimeChangePercent: {heading: 'Inclusive time change', value: 'inclusiveHours', unit: 'hours', scope: 'Summed target + rewrite model-request durations. Tools, orchestration and evaluation are excluded; this is not end-to-end task latency. Only the two MiniMax configurations are lower than Normal.'}
+    targetTimeChangePercent: {heading: 'Target-only change', value: 'targetHours', unit: 'hours', scope: 'Summed target-model request durations only. Rewriting, tools, orchestration and evaluation are excluded; this is not end-to-end task latency.'}
   };
   function deployment(metric) {
     const descriptor = metrics[metric];

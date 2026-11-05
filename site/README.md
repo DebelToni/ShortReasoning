@@ -17,8 +17,8 @@ uv run --no-project python -m http.server 8000 --bind 127.0.0.1 --directory site
 - Controlled token comparisons are conditional on accepted histories and equal horizons. Acceptance differs by route. Task success does not establish quality noninferiority.
 - All 50 assigned tasks remain in each deployment arm. Spend includes rewriting. Nemotron target costs are common-tariff estimates with captured compressor charges.
 - Target-only and rewrite-inclusive request durations are distinct. Neither is end-to-end agent latency. The history-word totals are not billed input-token totals.
-- The five compactor diagrams are illustrations of design choices. Self/external rewriting and per-block rewriting were tested; other settings shown are proposed experiments.
-- The training diagram is a proposal, not a measured result: frozen same-model teacher on compact history, trainable student on original history, matching a common continuation prefix and vocabulary. Forward KL updates the student only. The animated distributions are explicitly illustrative, not model outputs or training measurements.
+- The hero walkthrough is native HTML, not an embedded or linked GIF. The five compactor diagrams are illustrations of design choices. Self/external rewriting and per-block rewriting were tested; other settings shown are proposed experiments.
+- The training diagram is a proposal, not a measured result: frozen same-model teacher on compact history, trainable student on original history, matching a common continuation prefix and vocabulary. Forward KL updates the student only. One connected rollout → compact → train scene shows the distributions converging. The animated probability masses are explicitly illustrative, not model outputs or training measurements.
 - Source figure exports preserve the paper's original controlled-effects and length/quality figures.
 
 No raw reasoning, task patches, response journals, credentials, or private paths belong in this site.
@@ -26,6 +26,6 @@ No raw reasoning, task patches, response journals, credentials, or private paths
 ## Deployment
 
 `.github/workflows/pages.yml` checks syntax and public aggregate invariants,
-then deploys `site/` using GitHub Pages Actions. Resource paths are relative so
+then copies `site/` into a deployment artifact and adds content-hash query versions to CSS/JavaScript URLs before deploying with GitHub Pages Actions. This prevents old cached scripts or styles from being mixed with new HTML. Resource paths are relative so
 the site works under the `/ShortReasoning/` project prefix. No server, package
 installation, model call, or account credential is required by the site itself.
