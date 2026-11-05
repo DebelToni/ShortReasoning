@@ -137,25 +137,16 @@ async function loadResults() {
   if (!response.ok) throw new Error(`Results failed to load: HTTP ${response.status}`);
   const data = await response.json();
   if (data.controlled.routes.length !== 6 || data.deployment.models.length !== 4) throw new Error('Unexpected results schema');
-  const chart = $('#route-chart');
-  const domainMin = Math.floor(Math.min(...data.controlled.routes.flatMap((r) => r.ci)) / 20) * 20;
-  const domainMax = Math.max(0, Math.ceil(Math.max(...data.controlled.routes.flatMap((r) => r.ci)) / 20) * 20);
-  const pos = (value) => (value - domainMin) / (domainMax - domainMin) * 100;
-  $('#route-axis').innerHTML = Array.from({length:(domainMax-domainMin)/20+1}, (_,i) => {
-    const value = domainMin + i * 20;
-    return `<span class="axis-tick" data-value="${value}" style="left:${pos(value)}%"><span>${value === 0 ? '0' : `${value < 0 ? '−' : '+'}${Math.abs(value)}%`}</span></span>`;
-  }).join('');
-  data.controlled.routes.forEach((route, i) => {
-    const row = document.createElement('button'); row.className = 'route-row'; row.setAttribute('aria-pressed', String(i === 0));
-    row.setAttribute('aria-label', `${route.label}: ${signed(route.medianChangePercent)} median future reasoning change; 95% interval ${signed(route.ci[0])} to ${signed(route.ci[1])}`);
-    row.innerHTML = `<span class="route-label">${route.label}</span><span class="route-plot" aria-hidden="true"><i class="route-zero" style="left:${pos(0)}%"></i><i class="route-interval" style="left:${pos(route.ci[0])}%;width:${pos(route.ci[1])-pos(route.ci[0])}%"></i><i class="route-median" style="left:${pos(route.medianChangePercent)}%"></i></span><span class="route-value">${signed(route.medianChangePercent)}</span>`;
-    row.addEventListener('click', () => {
-      $$('.route-row').forEach((r) => r.setAttribute('aria-pressed', String(r === row)));
-      $('#route-detail').innerHTML = `<h3>${route.label}</h3><div class="detail-change">${signed(route.medianChangePercent)}</div><p class="detail-sub">median change in future reasoning</p><div class="detail-grid"><div><strong>${route.accepted}/${route.attempted}</strong><span>histories accepted</span></div><div><strong>${route.shorter}/${route.comparable}</strong><span>pairs shorter</span></div><div><strong>${route.cleanSuccess} → ${route.compactSuccess}</strong><span>success / ${route.qualityPairs}</span></div></div>`;
-    });
-    chart.append(row);
-    if (i === 0) row.click();
+  const routeSelect = $('#route-select');
+  data.controlled.routes.forEach((route) => {
+    const option = document.createElement('option');
+    option.value = route.id; option.textContent = route.label; routeSelect.append(option);
   });
+  function showRoute() {
+    const route = data.controlled.routes.find((r) => r.id === routeSelect.value);
+    $('#route-detail').innerHTML = `<h3>${route.label}</h3><div class="detail-change">${signed(route.medianChangePercent)}</div><p class="detail-sub">median change in future reasoning</p><div class="detail-grid"><div><strong>${route.accepted}/${route.attempted}</strong><span>histories accepted</span></div><div><strong>${route.shorter}/${route.comparable}</strong><span>pairs shorter</span></div><div><strong>${route.cleanSuccess} → ${route.compactSuccess}</strong><span>success / ${route.qualityPairs}</span></div></div>`;
+  }
+  routeSelect.addEventListener('change', showRoute); showRoute();
   const metrics = {
     spendChangePercent: {heading: 'Spend change', value: 'spendUsd', unit: 'usd', scope: 'Spend includes captured rewriting charges. Nemotron target costs use a common-tariff estimate. All 50 assigned tasks remain, including unsolved and model-limit outcomes.'},
     targetTimeChangePercent: {heading: 'Target-only change', value: 'targetHours', unit: 'hours', scope: 'Summed target-model request durations only. Rewriting, tools, orchestration and evaluation are excluded; this is not end-to-end task latency.'}
