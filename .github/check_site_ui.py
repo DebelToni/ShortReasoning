@@ -74,7 +74,9 @@ with tempfile.TemporaryDirectory(dir=a.out,prefix='www-') as directory:
      expect(page.locator('.animation-dialog[open]')).to_be_visible()
      assert root.locator('.flow-sizer').evaluate('(e)=>e.getBoundingClientRect().width')>=950
      assert root.locator('.flow-viewport').evaluate('(e)=>e.scrollWidth>e.clientWidth')
-     page.keyboard.press('Escape');expect(page.locator('.animation-dialog[open]')).to_have_count(0)
+     dialog=page.locator('.animation-dialog[open]');dialog.evaluate('(e)=>e.scrollTop=e.scrollHeight');page.wait_for_timeout(50)
+     close=root.locator('.flow-expand').bounding_box();bounds=dialog.bounding_box();assert close['y']>=bounds['y'] and close['y']+close['height']<=bounds['y']+bounds['height']
+     root.locator('.flow-expand').click();expect(page.locator('.animation-dialog[open]')).to_have_count(0)
      assert page.locator('#'+root.get_attribute('id')).count()==1
     normal=browser.new_page(reduced_motion='no-preference');normal.on('pageerror',lambda e:errors.append(str(e)))
     normal.goto(url,wait_until='networkidle');normal.wait_for_function('document.querySelector("#training-story").dataset.storyReady==="true"')
